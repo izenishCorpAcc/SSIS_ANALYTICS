@@ -1,0 +1,510 @@
+@model SSISAnalyticsDashboard.Models.DashboardViewModel
+@{
+    ViewData["Title"] = "SSIS Analytics Dashboard";
+}
+
+<style>
+    .spinner-overlay {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 10;
+    }
+    
+    .card.loading {
+        opacity: 0.7;
+    }
+    
+    #refreshBtn.loading .bi-arrow-clockwise {
+        animation: spin 1s linear infinite;
+    }
+    
+    @@keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    
+    .pulse {
+        animation: pulse-animation 1s ease-in-out;
+    }
+    
+    @@keyframes pulse-animation {
+        0% { opacity: 0.6; }
+        50% { opacity: 1; }
+        100% { opacity: 0.6; }
+    }
+</style>
+
+<div class="container-fluid">
+    @if (!string.IsNullOrEmpty(ViewBag.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Error!</strong> @ViewBag.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-10">
+            <h1 class="display-4">SSIS Analytics Dashboard</h1>
+            <p class="text-muted">Monitor your SQL Server Integration Services executions <span id="autoRefreshStatus" class="badge bg-success">Auto-refresh: ON</span></p>
+        </div>
+        <div class="col-md-2 text-end">
+            <button class="btn btn-primary" onclick="manualRefresh()" id="refreshBtn">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Metrics Cards -->
+    <div class="row g-4 mb-4" id="metricsCards">
+        <div class="col-md-3">
+            <div class="card border-primary position-relative">
+                <div class="card-body">
+                    <div class="spinner-overlay d-none">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    </div>
+                    <h6 class="card-subtitle mb-2 text-muted">Total Executions</h6>
+                    <h2 class="card-title display-4">@Model.Metrics.TotalExecutions</h2>
+                    <p class="card-text text-muted">Last 30 days</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success position-relative">
+                <div class="card-body">
+                    <div class="spinner-overlay d-none">
+                        <div class="spinner-border spinner-border-sm text-success" role="status"></div>
+                    </div>
+                    <h6 class="card-subtitle mb-2 text-muted">Successful</h6>
+                    <h2 class="card-title display-4 text-success">@Model.Metrics.SuccessfulExecutions</h2>
+                    <p class="card-text text-muted">@Model.Metrics.SuccessRate% success rate</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-danger position-relative">
+                <div class="card-body">
+                    <div class="spinner-overlay d-none">
+                        <div class="spinner-border spinner-border-sm text-danger" role="status"></div>
+                    </div>
+                    <h6 class="card-subtitle mb-2 text-muted">Failed</h6>
+                    <h2 class="card-title display-4 text-danger">@Model.Metrics.FailedExecutions</h2>
+                    <p class="card-text text-muted">Requires attention</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning position-relative">
+                <div class="card-body">
+                    <div class="spinner-overlay d-none">
+                        <div class="spinner-border spinner-border-sm text-warning" role="status"></div>
+                    </div>
+                    <h6 class="card-subtitle mb-2 text-muted">Avg Duration</h6>
+                    <h2 class="card-title display-4 text-warning">@Model.Metrics.AvgDuration s</h2>
+                    <p class="card-text text-muted">Average execution time</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Success Rate Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="successRateChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Execution Trends (Last 30 Days)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="trendsChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Executions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Recent Executions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Execution ID</th>
+                                    <th>Package</th>
+                                    <th>Project</th>
+                                    <th>Status</th>
+                                    <th>Start Time</th>
+                                    <th>Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var execution in Model.RecentExecutions)
+                                {
+                                    <tr>
+                                        <td>@execution.ExecutionId</td>
+                                        <td>@execution.PackageName</td>
+                                        <td>@execution.ProjectName</td>
+                                        <td>
+                                            @if (execution.Status == "Succeeded")
+                                            {
+                                                <span class="badge bg-success">@execution.Status</span>
+                                            }
+                                            else if (execution.Status == "Failed")
+                                            {
+                                                <span class="badge bg-danger">@execution.Status</span>
+                                            }
+                                            else if (execution.Status == "Running")
+                                            {
+                                                <span class="badge bg-primary">@execution.Status</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">@execution.Status</span>
+                                            }
+                                        </td>
+                                        <td>@execution.StartTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                        <td>@FormatDuration(execution.Duration)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Errors -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Recent Errors</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Execution ID</th>
+                                    <th>Package</th>
+                                    <th>Error Time</th>
+                                    <th>Error Code</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var error in Model.RecentErrors)
+                                {
+                                    <tr>
+                                        <td>@error.ExecutionId</td>
+                                        <td>@error.PackageName</td>
+                                        <td>@error.ErrorTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                        <td>@error.ErrorCode</td>
+                                        <td class="text-truncate" style="max-width: 400px;">@error.ErrorDescription</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string FormatDuration(int seconds)
+    {
+        var hours = seconds / 3600;
+        var minutes = (seconds % 3600) / 60;
+        var secs = seconds % 60;
+
+        if (hours > 0)
+            return $"{hours}h {minutes}m {secs}s";
+        else if (minutes > 0)
+            return $"{minutes}m {secs}s";
+        else
+            return $"{secs}s";
+    }
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Global chart instances
+        let successChart;
+        let trendsChart;
+        let autoRefreshInterval;
+        const REFRESH_INTERVAL = 30000; // 30 seconds
+
+        // Initialize charts
+        function initCharts() {
+            // Success Rate Pie Chart
+            const successCtx = document.getElementById('successRateChart').getContext('2d');
+            successChart = new Chart(successCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Successful', 'Failed'],
+                    datasets: [{
+                        data: [@Model.Metrics.SuccessfulExecutions, @Model.Metrics.FailedExecutions],
+                        backgroundColor: ['#198754', '#dc3545']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Trends Line Chart
+            const trendsCtx = document.getElementById('trendsChart').getContext('2d');
+            trendsChart = new Chart(trendsCtx, {
+                type: 'line',
+                data: {
+                    labels: [@Html.Raw(string.Join(",", Model.Trends.Select(t => $"'{t.Date}'")))],
+                    datasets: [{
+                        label: 'Successful',
+                        data: [@string.Join(",", Model.Trends.Select(t => t.Success))],
+                        borderColor: '#198754',
+                        backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                        fill: true
+                    }, {
+                        label: 'Failed',
+                        data: [@string.Join(",", Model.Trends.Select(t => t.Failed))],
+                        borderColor: '#dc3545',
+                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Show loading indicators
+        function showLoading() {
+            document.getElementById('refreshBtn').classList.add('loading');
+            document.querySelectorAll('.spinner-overlay').forEach(spinner => {
+                spinner.classList.remove('d-none');
+            });
+            document.querySelectorAll('#metricsCards .card').forEach(card => {
+                card.classList.add('loading');
+            });
+        }
+
+        // Hide loading indicators
+        function hideLoading() {
+            document.getElementById('refreshBtn').classList.remove('loading');
+            document.querySelectorAll('.spinner-overlay').forEach(spinner => {
+                spinner.classList.add('d-none');
+            });
+            document.querySelectorAll('#metricsCards .card').forEach(card => {
+                card.classList.remove('loading');
+                card.classList.add('pulse');
+                setTimeout(() => card.classList.remove('pulse'), 1000);
+            });
+        }
+
+        // Fetch and update metrics via AJAX
+        async function updateMetrics() {
+            try {
+                const response = await fetch('/Dashboard/GetMetrics');
+                if (!response.ok) throw new Error('Failed to fetch metrics');
+                
+                const metrics = await response.json();
+                
+                // Update metric cards with animation
+                document.querySelector('.col-md-3:nth-child(1) .display-4').textContent = metrics.totalExecutions;
+                document.querySelector('.col-md-3:nth-child(2) .display-4').textContent = metrics.successfulExecutions;
+                document.querySelector('.col-md-3:nth-child(2) .card-text').textContent = `${metrics.successRate}% success rate`;
+                document.querySelector('.col-md-3:nth-child(3) .display-4').textContent = metrics.failedExecutions;
+                document.querySelector('.col-md-3:nth-child(4) .display-4').textContent = `${metrics.avgDuration} s`;
+                
+                // Update success chart
+                successChart.data.datasets[0].data = [metrics.successfulExecutions, metrics.failedExecutions];
+                successChart.update();
+                
+                console.log('✅ Metrics updated successfully');
+            } catch (error) {
+                console.error('❌ Error updating metrics:', error);
+            }
+        }
+
+        // Fetch and update trends via AJAX
+        async function updateTrends() {
+            try {
+                const response = await fetch('/Dashboard/GetTrends');
+                if (!response.ok) throw new Error('Failed to fetch trends');
+                
+                const trends = await response.json();
+                
+                // Update trends chart
+                trendsChart.data.labels = trends.map(t => t.date);
+                trendsChart.data.datasets[0].data = trends.map(t => t.success);
+                trendsChart.data.datasets[1].data = trends.map(t => t.failed);
+                trendsChart.update();
+                
+                console.log('✅ Trends updated successfully');
+            } catch (error) {
+                console.error('❌ Error updating trends:', error);
+            }
+        }
+
+        // Update all dashboard data
+        async function refreshDashboard() {
+            console.log('🔄 Refreshing dashboard data...');
+            showLoading();
+            
+            await Promise.all([
+                updateMetrics(),
+                updateTrends()
+            ]);
+            
+            hideLoading();
+            
+            // Update last refresh time
+            const now = new Date().toLocaleTimeString();
+            console.log(`✨ Dashboard refreshed at ${now}`);
+        }
+
+        // Start auto-refresh
+        function startAutoRefresh() {
+            console.log(`🚀 Auto-refresh enabled (every ${REFRESH_INTERVAL / 1000} seconds)`);
+            autoRefreshInterval = setInterval(refreshDashboard, REFRESH_INTERVAL);
+        }
+
+        // Stop auto-refresh
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                console.log('⏸️ Auto-refresh paused');
+            }
+        }
+
+        // Manual refresh button handler
+        function manualRefresh() {
+            stopAutoRefresh();
+            refreshDashboard().then(() => {
+                startAutoRefresh();
+            });
+        }
+
+        // SignalR Connection
+        let connection;
+        
+        function setupSignalR() {
+            connection = new signalR.HubConnectionBuilder()
+                .withUrl("/dashboardHub")
+                .withAutomaticReconnect()
+                .build();
+
+            // Handle metrics updates from server
+            connection.on("ReceiveMetricsUpdate", function(metrics) {
+                console.log('📡 Received metrics update via SignalR');
+                // Update UI with pushed data
+                document.querySelector('.col-md-3:nth-child(1) .display-4').textContent = metrics.totalExecutions;
+                document.querySelector('.col-md-3:nth-child(2) .display-4').textContent = metrics.successfulExecutions;
+                document.querySelector('.col-md-3:nth-child(2) .card-text').textContent = `${metrics.successRate}% success rate`;
+                document.querySelector('.col-md-3:nth-child(3) .display-4').textContent = metrics.failedExecutions;
+                document.querySelector('.col-md-3:nth-child(4) .display-4').textContent = `${metrics.avgDuration} s`;
+            });
+
+            // Handle trends updates from server
+            connection.on("ReceiveTrendsUpdate", function(trends) {
+                console.log('📡 Received trends update via SignalR');
+                trendsChart.data.labels = trends.map(t => t.date);
+                trendsChart.data.datasets[0].data = trends.map(t => t.success);
+                trendsChart.data.datasets[1].data = trends.map(t => t.failed);
+                trendsChart.update();
+            });
+
+            // Handle connection events
+            connection.on("Connected", function(connectionId) {
+                console.log(`✅ SignalR Connected: ${connectionId}`);
+                document.getElementById('autoRefreshStatus').innerHTML = 
+                    '<i class="bi bi-broadcast"></i> Live Updates: ON';
+            });
+
+            connection.on("DataRefreshed", function() {
+                console.log('🔔 Server notified: Data refreshed');
+                refreshDashboard();
+            });
+
+            connection.onreconnecting(() => {
+                console.log('🔄 SignalR reconnecting...');
+                document.getElementById('autoRefreshStatus').classList.replace('bg-success', 'bg-warning');
+            });
+
+            connection.onreconnected(() => {
+                console.log('✅ SignalR reconnected');
+                document.getElementById('autoRefreshStatus').classList.replace('bg-warning', 'bg-success');
+            });
+
+            connection.onclose(() => {
+                console.log('❌ SignalR disconnected');
+                document.getElementById('autoRefreshStatus').innerHTML = 'Auto-refresh: ON';
+                document.getElementById('autoRefreshStatus').classList.replace('bg-success', 'bg-secondary');
+            });
+
+            // Start connection
+            connection.start()
+                .then(() => console.log('🚀 SignalR connection established'))
+                .catch(err => {
+                    console.error('❌ SignalR connection failed:', err);
+                    console.log('⚠️ Falling back to polling mode');
+                });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initCharts();
+            startAutoRefresh();
+            setupSignalR();
+            
+            // Add visual feedback
+            console.log('📊 SSIS Analytics Dashboard initialized');
+            console.log(`⏰ Auto-refresh: Every ${REFRESH_INTERVAL / 1000} seconds`);
+            console.log('📡 SignalR: Real-time updates enabled');
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            stopAutoRefresh();
+            if (connection) {
+                connection.stop();
+            }
+        });
+    </script>
+}
