@@ -24,7 +24,21 @@ builder.Services.AddSession(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
+{
+    // Explicitly disable browser refresh/hot reload
+    app.Use(async (context, next) =>
+    {
+        // Block requests to browser refresh endpoint
+        if (context.Request.Path.StartsWithSegments("/_framework/aspnetcore-browser-refresh.js"))
+        {
+            context.Response.StatusCode = 404;
+            return;
+        }
+        await next();
+    });
+}
+else
 {
     app.UseExceptionHandler("/Home/Error");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
