@@ -53,71 +53,29 @@ namespace SSISAnalyticsDashboard.Controllers
         {
             try
             {
-                // Check if this is an AJAX request
-                bool isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest";
-
-            if (!ModelState.IsValid)
-            {
-                if (isAjax)
-                    return Json(new { success = false, message = "Validation failed" });
-                return View(model);
-            }
-
-            // Validate SQL Auth credentials
-            if (model.AuthenticationMode == "SQL" && (string.IsNullOrEmpty(model.Username) || string.IsNullOrEmpty(model.Password)))
-            {
-                string errorMsg = "Username and Password are required for SQL Server Authentication.";
-                if (isAjax)
-                    return Json(new { success = false, message = errorMsg });
-                model.ErrorMessage = errorMsg;
-                return View(model);
-            }
-
-            try
-            {
-                // Build connection string based on authentication mode
-                string connectionString;
-                string testConnectionString; // For initial connection test to master db
-                
-                if (model.AuthenticationMode == "Windows")
+                if (!ModelState.IsValid)
                 {
-                    connectionString = $"Server={model.ServerName};Database=SSISDB;Integrated Security=true;TrustServerCertificate=true;Encrypt=false;";
-                    testConnectionString = $"Server={model.ServerName};Database=master;Integrated Security=true;TrustServerCertificate=true;Encrypt=false;";
-                }
-                else
-                {
-                    connectionString = $"Server={model.ServerName};Database=SSISDB;User Id={model.Username};Password={model.Password};TrustServerCertificate=true;Encrypt=false;";
-                    testConnectionString = $"Server={model.ServerName};Database=master;User Id={model.Username};Password={model.Password};TrustServerCertificate=true;Encrypt=false;";
+                    return View(model);
                 }
 
-                // Test connection if requested
-                if (model.TestConnection)
+                // Only handle Windows Authentication for now
+                if (model.AuthenticationMode != "Windows")
                 {
-                    // First test connection to master database
-                    using (var testConnection = new SqlConnection(testConnectionString))
-                    {
-                        await testConnection.OpenAsync();
-                        _logger.LogInformation($"Successfully connected to server {model.ServerName}");
-                    }
-                    
-                    // Then try to connect to SSISDB
-                    using (var connection = new SqlConnection(connectionString))
-                    {
-                        await connection.OpenAsync();
-                        _logger.LogInformation($"Successfully connected to SSISDB on {model.ServerName} using {model.AuthenticationMode} Authentication");
-                    }
+                    model.ErrorMessage = "Only Windows Authentication is supported at this time.";
+                    return View(model);
                 }
+
+                // Build connection string for Windows Authentication
+                string connectionString = $"Server={model.ServerName};Database=SSISDB;Integrated Security=true;TrustServerCertificate=true;Encrypt=false;";
 
                 // Update BOTH appsettings.json files (root and bin/Debug)
-                // 1. Update the root appsettings.json
                 var rootAppSettingsPath = Path.Combine(_environment.ContentRootPath, "appsettings.json");
                 await UpdateAppSettingsFile(rootAppSettingsPath, connectionString);
-                _logger.LogInformation($"Updated root appsettings.json at: {rootAppSettingsPath}");
+                _logger.LogInformation($"Updated root appsettings.json with server: {model.ServerName}");
                 
-                // 2. Update the bin/Debug appsettings.json (the one actually used by the running app)
                 var binAppSettingsPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
                 await UpdateAppSettingsFile(binAppSettingsPath, connectionString);
-                _logger.LogInformation($"Updated bin appsettings.json at: {binAppSettingsPath}");
+                _logger.LogInformation($"Updated bin appsettings.json with server: {model.ServerName}");
 
                 // Reload configuration
                 var configRoot = (IConfigurationRoot)_configuration;
@@ -126,59 +84,16 @@ namespace SSISAnalyticsDashboard.Controllers
                 // Set session flag to bypass middleware check on next request
                 HttpContext.Session.SetString("ConfigJustSaved", "true");
 
-                TempData["SuccessMessage"] = $"Successfully configured server: {model.ServerName} with {model.AuthenticationMode} Authentication";
-                TempData["ShowSuccessAlert"] = "true";
+                _logger.LogInformation($"Configuration saved successfully for server: {model.ServerName}");
                 
-                // Return JSON for AJAX requests, redirect for normal requests
-                if (isAjax)
-                {
-                    return Json(new { 
-                        success = true, 
-                        message = $"Successfully configured server: {model.ServerName} with {model.AuthenticationMode} Authentication",
-                        serverName = model.ServerName,
-                        authMode = model.AuthenticationMode
-                    });
-                }
-                
-                // Use absolute URL to avoid middleware redirect loop
+                // Redirect directly to Dashboard
                 return Redirect("/Dashboard/Index");
-            }
-            catch (SqlException ex)
-            {
-                _logger.LogError(ex, "Database connection failed");
-                
-                // Provide more specific error messages
-                string errorMsg = ex.Number switch
-                {
-                    4060 => "SSISDB database not found. Please ensure SQL Server Integration Services is installed and configured.",
-                    18456 => "Login failed. Please check your credentials and ensure you have permission to access the server.",
-                    -1 => "Network-related error. Please check if SQL Server is running and the server name is correct.",
-                    53 => "Server not found or not accessible. Please verify the server name and network connectivity.",
-                    _ => $"Connection failed: {ex.Message}"
-                };
-                
-                if (isAjax)
-                    return Json(new { success = false, message = errorMsg });
-                model.ErrorMessage = errorMsg;
-                return View(model);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Configuration failed");
-                
-                string errorMsg = $"Configuration error: {ex.Message}";
-                if (isAjax)
-                    return Json(new { success = false, message = errorMsg });
-                model.ErrorMessage = errorMsg;
+                model.ErrorMessage = $"Configuration error: {ex.Message}";
                 return View(model);
-            }
-            }
-            catch (Exception outerEx)
-            {
-                _logger.LogError(outerEx, "Unexpected error in ServerConfig");
-                
-                // Always try to return JSON for safety
-                return Json(new { success = false, message = $"Unexpected error: {outerEx.Message}" });
             }
         }
 

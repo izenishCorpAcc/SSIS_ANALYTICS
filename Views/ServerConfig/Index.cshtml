@@ -173,139 +173,11 @@
     </div>
 </div>
 
+
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     
     <script>
-        // Handle form submission with AJAX to show success alert
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.querySelector('form');
-            const submitBtn = form.querySelector('button[type="submit"]');
-            
-            form.addEventListener('submit', function(e) {
-                if (!form.checkValidity()) {
-                    return; // Let default validation handle it
-                }
-                
-                e.preventDefault();
-                
-                // Show loading state
-                const originalBtnText = submitBtn.innerHTML;
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Connecting...';
-                
-                // Submit form via fetch
-                const formData = new FormData(form);
-                
-                fetch(form.action, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Configuration successful - show success alert
-                        showSuccessAlert(data.serverName, data.authMode);
-                    } else {
-                        // Show error alert
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = originalBtnText;
-                        showErrorAlert(data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalBtnText;
-                    showErrorAlert('An unexpected error occurred. Please try again.');
-                });
-            });
-        });
-        
-        function showSuccessAlert(serverName, authMode) {
-            // Show success alert popup
-            const alertHtml = `
-                <div class="modal fade show" id="successModal" tabindex="-1" style="display: block; background: rgba(0,0,0,0.5);">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-                            <div class="modal-header bg-success text-white">
-                                <h5 class="modal-title">
-                                    <i class="bi bi-check-circle-fill"></i> Connection Successful!
-                                </h5>
-                            </div>
-                            <div class="modal-body text-center py-4">
-                                <div class="mb-3">
-                                    <i class="bi bi-database-check text-success" style="font-size: 4rem;"></i>
-                                </div>
-                                <h5 class="mb-3">Successfully Connected!</h5>
-                                <p class="mb-2">
-                                    <strong>Server:</strong> ${serverName}<br>
-                                    <strong>Authentication:</strong> ${authMode}
-                                </p>
-                                <p class="text-muted">
-                                    <i class="bi bi-arrow-right-circle"></i> Redirecting to dashboard...
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            document.body.insertAdjacentHTML('beforeend', alertHtml);
-            
-            // Redirect after 2.5 seconds
-            setTimeout(function() {
-                window.location.href = '/Dashboard/Index';
-            }, 2500);
-        }
-        
-        function showErrorAlert(message) {
-            // Show error alert popup
-            const alertHtml = `
-                <div class="modal fade show" id="errorModal" tabindex="-1" style="display: block; background: rgba(0,0,0,0.5);">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-                            <div class="modal-header bg-danger text-white">
-                                <h5 class="modal-title">
-                                    <i class="bi bi-exclamation-triangle-fill"></i> Connection Failed
-                                </h5>
-                                <button type="button" class="btn-close btn-close-white" onclick="closeErrorModal()"></button>
-                            </div>
-                            <div class="modal-body text-center py-4">
-                                <div class="mb-3">
-                                    <i class="bi bi-x-circle text-danger" style="font-size: 4rem;"></i>
-                                </div>
-                                <h5 class="mb-3">Connection Failed</h5>
-                                <p class="text-danger mb-2">
-                                    ${message}
-                                </p>
-                                <p class="text-muted small">
-                                    Please check your server name and authentication settings.
-                                </p>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" onclick="closeErrorModal()">
-                                    Close
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            document.body.insertAdjacentHTML('beforeend', alertHtml);
-        }
-        
-        function closeErrorModal() {
-            const modal = document.getElementById('errorModal');
-            if (modal) {
-                modal.remove();
-            }
-        }
-        
         // Toggle authentication fields based on selected mode
         function toggleAuthFields() {
             const authMode = document.getElementById('authMode').value;
@@ -315,10 +187,8 @@
             if (authMode === 'SQL') {
                 sqlAuthFields.style.display = 'block';
                 securityInfo.innerHTML = `
-                    <li>Using SQL Server Authentication</li>
-                    <li>Credentials are encrypted in connection string</li>
-                    <li>Connecting to SSISDB catalog database</li>
-                    <li>Connection string saved to appsettings.json</li>
+                    <li>SQL Authentication is not yet supported</li>
+                    <li>Please use Windows Authentication</li>
                 `;
             } else {
                 sqlAuthFields.style.display = 'none';
@@ -334,20 +204,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             toggleAuthFields();
         });
-
-        // Bootstrap form validation
-        (function() {
-            'use strict'
-            var forms = document.querySelectorAll('.needs-validation')
-            Array.prototype.slice.call(forms).forEach(function (form) {
-                form.addEventListener('submit', function (event) {
-                    if (!form.checkValidity()) {
-                        event.preventDefault()
-                        event.stopPropagation()
-                    }
-                    form.classList.add('was-validated')
-                }, false)
-            })
-        })()
     </script>
 }
+
