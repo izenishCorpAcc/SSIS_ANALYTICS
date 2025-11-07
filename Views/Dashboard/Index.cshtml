@@ -144,50 +144,59 @@
                     <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Execution ID</th>
-                                    <th>Package</th>
-                                    <th>Project</th>
-                                    <th>Status</th>
-                                    <th>Start Time</th>
-                                    <th>Duration</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var execution in Model.RecentExecutions)
-                                {
+                    @if (Model.RecentExecutions != null && Model.RecentExecutions.Any())
+                    {
+                        <div class="table-responsive" id="recentExecutionsTable">
+                            <table class="table table-hover">
+                                <thead>
                                     <tr>
-                                        <td>@execution.ExecutionId</td>
-                                        <td>@execution.PackageName</td>
-                                        <td>@execution.ProjectName</td>
-                                        <td>
-                                            @if (execution.Status == "Succeeded")
-                                            {
-                                                <span class="badge bg-success">@execution.Status</span>
-                                            }
-                                            else if (execution.Status == "Failed")
-                                            {
-                                                <span class="badge bg-danger">@execution.Status</span>
-                                            }
-                                            else if (execution.Status == "Running")
-                                            {
-                                                <span class="badge bg-primary">@execution.Status</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="badge bg-secondary">@execution.Status</span>
-                                            }
-                                        </td>
-                                        <td>@execution.StartTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                                        <td>@FormatDuration(execution.Duration)</td>
+                                        <th>Execution ID</th>
+                                        <th>Package</th>
+                                        <th>Project</th>
+                                        <th>Status</th>
+                                        <th>Start Time</th>
+                                        <th>Duration</th>
                                     </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody>
+                                    @foreach (var execution in Model.RecentExecutions)
+                                    {
+                                        <tr>
+                                            <td>@execution.ExecutionId</td>
+                                            <td>@execution.PackageName</td>
+                                            <td>@execution.ProjectName</td>
+                                            <td>
+                                                @if (execution.Status == "Succeeded")
+                                                {
+                                                    <span class="badge bg-success">@execution.Status</span>
+                                                }
+                                                else if (execution.Status == "Failed")
+                                                {
+                                                    <span class="badge bg-danger">@execution.Status</span>
+                                                }
+                                                else if (execution.Status == "Running")
+                                                {
+                                                    <span class="badge bg-primary">@execution.Status</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">@execution.Status</span>
+                                                }
+                                            </td>
+                                            <td>@execution.StartTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                            <td>@FormatDuration(execution.Duration)</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> No recent executions found in the last 30 days.
+                        </div>
+                    }
                 </div>
             </div>
         </div>
@@ -204,30 +213,32 @@
                     <div class="spinner-border spinner-border-sm text-info" role="status"></div>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive" id="lastExecutedPackagesTable">
-                        <table class="table table-striped table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Execution ID</th>
-                                    <th>Package Name</th>
-                                    <th>Folder</th>
-                                    <th>Project</th>
-                                    <th>Status</th>
-                                    <th>Start Time</th>
-                                    <th>End Time</th>
-                                    <th>Duration</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var package in Model.LastExecutedPackages)
-                                {
+                    @if (Model.LastExecutedPackages != null && Model.LastExecutedPackages.Any())
+                    {
+                        <div class="table-responsive" id="lastExecutedPackagesTable">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-light">
                                     <tr>
-                                        <td><span class="badge bg-secondary">@package.ExecutionId</span></td>
-                                        <td><strong>@package.PackageName</strong></td>
-                                        <td>@package.FolderName</td>
-                                        <td>@package.ProjectName</td>
-                                        <td>
-                                            @if (package.Status == "Succeeded")
+                                        <th>Execution ID</th>
+                                        <th>Package Name</th>
+                                        <th>Folder</th>
+                                        <th>Project</th>
+                                        <th>Status</th>
+                                        <th>Start Time</th>
+                                        <th>End Time</th>
+                                        <th>Duration</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var package in Model.LastExecutedPackages)
+                                    {
+                                        <tr>
+                                            <td><span class="badge bg-secondary">@package.ExecutionId</span></td>
+                                            <td><strong>@package.PackageName</strong></td>
+                                            <td>@package.FolderName</td>
+                                            <td>@package.ProjectName</td>
+                                            <td>
+                                                @if (package.Status == "Succeeded")
                                             {
                                                 <span class="badge bg-success">
                                                     <i class="bi bi-check-circle"></i> @package.Status
@@ -282,6 +293,13 @@
                             </tbody>
                         </table>
                     </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> No package executions found.
+                        </div>
+                    }
                 </div>
             </div>
         </div>
@@ -295,67 +313,40 @@
                     <h5>Recent Errors</h5>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Execution ID</th>
-                                    <th>Package</th>
-                                    <th>Error Time</th>
-                                    <th>Error Code</th>
-                                    <th>Description</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var error in Model.RecentErrors)
-                                {
+                    @if (Model.RecentErrors != null && Model.RecentErrors.Any())
+                    {
+                        <div class="table-responsive" id="recentErrorsTable">
+                            <table class="table table-hover">
+                                <thead>
                                     <tr>
-                                        <td>@error.ExecutionId</td>
-                                        <td>@error.PackageName</td>
-                                        <td>@error.ErrorTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                                        <td>@error.ErrorCode</td>
-                                        <td class="text-truncate" style="max-width: 400px;">@error.ErrorDescription</td>
+                                        <th>Execution ID</th>
+                                        <th>Package</th>
+                                        <th>Error Time</th>
+                                        <th>Error Code</th>
+                                        <th>Description</th>
                                     </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>    <!-- Recent Errors -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Recent Errors</h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Execution ID</th>
-                                    <th>Package</th>
-                                    <th>Error Time</th>
-                                    <th>Error Code</th>
-                                    <th>Description</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var error in Model.RecentErrors)
-                                {
-                                    <tr>
-                                        <td>@error.ExecutionId</td>
-                                        <td>@error.PackageName</td>
-                                        <td>@error.ErrorTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                                        <td>@error.ErrorCode</td>
-                                        <td class="text-truncate" style="max-width: 400px;">@error.ErrorDescription</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody>
+                                    @foreach (var error in Model.RecentErrors)
+                                    {
+                                        <tr>
+                                            <td>@error.ExecutionId</td>
+                                            <td>@error.PackageName</td>
+                                            <td>@error.ErrorTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                            <td>@error.ErrorCode</td>
+                                            <td class="text-truncate" style="max-width: 400px;">@error.ErrorDescription</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle"></i> No errors found in the last 30 days. Great job!
+                        </div>
+                    }
                 </div>
             </div>
         </div>
