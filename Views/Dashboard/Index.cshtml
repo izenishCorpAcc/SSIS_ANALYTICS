@@ -136,9 +136,12 @@
     <!-- Recent Executions -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card">
+            <div class="card position-relative" id="recentExecutionsCard">
                 <div class="card-header">
                     <h5>Recent Executions</h5>
+                </div>
+                <div class="spinner-overlay d-none">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -190,7 +193,137 @@
         </div>
     </div>
 
+    <!-- Last 10 Executed Packages -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card position-relative" id="lastExecutedPackagesCard">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Last 10 Executed Packages</h5>
+                </div>
+                <div class="spinner-overlay d-none">
+                    <div class="spinner-border spinner-border-sm text-info" role="status"></div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive" id="lastExecutedPackagesTable">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Execution ID</th>
+                                    <th>Package Name</th>
+                                    <th>Folder</th>
+                                    <th>Project</th>
+                                    <th>Status</th>
+                                    <th>Start Time</th>
+                                    <th>End Time</th>
+                                    <th>Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var package in Model.LastExecutedPackages)
+                                {
+                                    <tr>
+                                        <td><span class="badge bg-secondary">@package.ExecutionId</span></td>
+                                        <td><strong>@package.PackageName</strong></td>
+                                        <td>@package.FolderName</td>
+                                        <td>@package.ProjectName</td>
+                                        <td>
+                                            @if (package.Status == "Succeeded")
+                                            {
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-check-circle"></i> @package.Status
+                                                </span>
+                                            }
+                                            else if (package.Status == "Failed")
+                                            {
+                                                <span class="badge bg-danger">
+                                                    <i class="bi bi-x-circle"></i> @package.Status
+                                                </span>
+                                            }
+                                            else if (package.Status == "Running")
+                                            {
+                                                <span class="badge bg-primary">
+                                                    <i class="bi bi-arrow-clockwise"></i> @package.Status
+                                                </span>
+                                            }
+                                            else if (package.Status == "Pending")
+                                            {
+                                                <span class="badge bg-warning">
+                                                    <i class="bi bi-hourglass"></i> @package.Status
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">@package.Status</span>
+                                            }
+                                        </td>
+                                        <td>@package.StartTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                        <td>
+                                            @if (package.EndTime.HasValue)
+                                            {
+                                                @package.EndTime.Value.ToString("yyyy-MM-dd HH:mm:ss")
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (package.Duration > 0)
+                                            {
+                                                @FormatDuration(package.Duration)
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Recent Errors -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Recent Errors</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Execution ID</th>
+                                    <th>Package</th>
+                                    <th>Error Time</th>
+                                    <th>Error Code</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var error in Model.RecentErrors)
+                                {
+                                    <tr>
+                                        <td>@error.ExecutionId</td>
+                                        <td>@error.PackageName</td>
+                                        <td>@error.ErrorTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                        <td>@error.ErrorCode</td>
+                                        <td class="text-truncate" style="max-width: 400px;">@error.ErrorDescription</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>    <!-- Recent Errors -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
@@ -382,6 +515,75 @@
             }
         }
 
+        // Fetch and update last executed packages via AJAX
+        async function updateLastExecutedPackages() {
+            try {
+                const response = await fetch('/Dashboard/GetLastExecutedPackages');
+                if (!response.ok) throw new Error('Failed to fetch last executed packages');
+                
+                const packages = await response.json();
+                
+                // Update the table body
+                const tbody = document.querySelector('#lastExecutedPackagesTable tbody');
+                tbody.innerHTML = '';
+                
+                packages.forEach(pkg => {
+                    const statusBadge = getStatusBadgeHTML(pkg.status);
+                    const endTime = pkg.endTime ? new Date(pkg.endTime).toLocaleString('sv-SE').replace('T', ' ') : '-';
+                    const duration = pkg.duration > 0 ? formatDuration(pkg.duration) : '-';
+                    const startTime = new Date(pkg.startTime).toLocaleString('sv-SE').replace('T', ' ');
+                    
+                    const row = `
+                        <tr>
+                            <td><span class="badge bg-secondary">${pkg.executionId}</span></td>
+                            <td><strong>${pkg.packageName}</strong></td>
+                            <td>${pkg.folderName}</td>
+                            <td>${pkg.projectName}</td>
+                            <td>${statusBadge}</td>
+                            <td>${startTime}</td>
+                            <td>${endTime}</td>
+                            <td>${duration}</td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+                
+                console.log('✅ Last executed packages updated successfully');
+            } catch (error) {
+                console.error('❌ Error updating last executed packages:', error);
+            }
+        }
+
+        // Helper function to generate status badge HTML
+        function getStatusBadgeHTML(status) {
+            if (status === 'Succeeded') {
+                return '<span class="badge bg-success"><i class="bi bi-check-circle"></i> Succeeded</span>';
+            } else if (status === 'Failed') {
+                return '<span class="badge bg-danger"><i class="bi bi-x-circle"></i> Failed</span>';
+            } else if (status === 'Running') {
+                return '<span class="badge bg-primary"><i class="bi bi-arrow-clockwise"></i> Running</span>';
+            } else if (status === 'Pending') {
+                return '<span class="badge bg-warning"><i class="bi bi-hourglass"></i> Pending</span>';
+            } else {
+                return `<span class="badge bg-secondary">${status}</span>`;
+            }
+        }
+
+        // Helper function to format duration
+        function formatDuration(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes}m ${secs}s`;
+            } else if (minutes > 0) {
+                return `${minutes}m ${secs}s`;
+            } else {
+                return `${secs}s`;
+            }
+        }
+
         // Update all dashboard data
         async function refreshDashboard() {
             console.log('🔄 Refreshing dashboard data...');
@@ -389,7 +591,8 @@
             
             await Promise.all([
                 updateMetrics(),
-                updateTrends()
+                updateTrends(),
+                updateLastExecutedPackages()
             ]);
             
             hideLoading();
@@ -448,6 +651,34 @@
                 trendsChart.data.datasets[0].data = trends.map(t => t.success);
                 trendsChart.data.datasets[1].data = trends.map(t => t.failed);
                 trendsChart.update();
+            });
+
+            // Handle last executed packages updates from server
+            connection.on("ReceiveLastExecutedPackagesUpdate", function(packages) {
+                console.log('📡 Received last executed packages update via SignalR');
+                const tbody = document.querySelector('#lastExecutedPackagesTable tbody');
+                tbody.innerHTML = '';
+                
+                packages.forEach(pkg => {
+                    const statusBadge = getStatusBadgeHTML(pkg.status);
+                    const endTime = pkg.endTime ? new Date(pkg.endTime).toLocaleString('sv-SE').replace('T', ' ') : '-';
+                    const duration = pkg.duration > 0 ? formatDuration(pkg.duration) : '-';
+                    const startTime = new Date(pkg.startTime).toLocaleString('sv-SE').replace('T', ' ');
+                    
+                    const row = `
+                        <tr>
+                            <td><span class="badge bg-secondary">${pkg.executionId}</span></td>
+                            <td><strong>${pkg.packageName}</strong></td>
+                            <td>${pkg.folderName}</td>
+                            <td>${pkg.projectName}</td>
+                            <td>${statusBadge}</td>
+                            <td>${startTime}</td>
+                            <td>${endTime}</td>
+                            <td>${duration}</td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
             });
 
             // Handle connection events

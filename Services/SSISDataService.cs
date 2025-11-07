@@ -212,5 +212,64 @@ namespace SSISAnalyticsDashboard.Services
                 throw;
             }
         }
+
+        public async Task<List<PackageExecution>> GetLastExecutedPackagesAsync(int count = 10)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = $@"
+                    SELECT TOP {count}
+                        e.execution_id,
+                        e.package_name,
+                        e.folder_name,
+                        e.project_name,
+                        CASE 
+                            WHEN e.status = 1 THEN 'Created'
+                            WHEN e.status = 2 THEN 'Running'
+                            WHEN e.status = 3 THEN 'Canceled'
+                            WHEN e.status = 4 THEN 'Failed'
+                            WHEN e.status = 5 THEN 'Pending'
+                            WHEN e.status = 6 THEN 'Ended Unexpectedly'
+                            WHEN e.status = 7 THEN 'Succeeded'
+                            WHEN e.status = 8 THEN 'Stopping'
+                            WHEN e.status = 9 THEN 'Completed'
+                            ELSE 'Unknown'
+                        END as Status,
+                        e.start_time,
+                        e.end_time,
+                        DATEDIFF(SECOND, e.start_time, e.end_time) as Duration
+                    FROM [SSISDB].[catalog].[executions] e
+                    ORDER BY e.start_time DESC";
+
+                using var command = new SqlCommand(query, connection);
+                using var reader = await command.ExecuteReaderAsync();
+
+                var executions = new List<PackageExecution>();
+                while (await reader.ReadAsync())
+                {
+                    executions.Add(new PackageExecution
+                    {
+                        ExecutionId = reader.GetInt64(0),
+                        PackageName = reader.GetString(1),
+                        FolderName = reader.GetString(2),
+                        ProjectName = reader.GetString(3),
+                        Status = reader.GetString(4),
+                        StartTime = reader.GetDateTimeOffset(5).DateTime,
+                        EndTime = reader.IsDBNull(6) ? null : reader.GetDateTimeOffset(6).DateTime,
+                        Duration = reader.IsDBNull(7) ? 0 : reader.GetInt32(7)
+                    });
+                }
+
+                return executions;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching last executed packages");
+                throw;
+            }
+        }
     }
 }

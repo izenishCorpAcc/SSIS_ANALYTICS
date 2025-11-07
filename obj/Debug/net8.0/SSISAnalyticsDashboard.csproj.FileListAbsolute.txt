@@ -81,3 +81,4 @@ C:\Users\sagar.chudali\Documents\SSIS analyzer\SSISAnalyticsDashboard\bin\Debug\
 C:\Users\sagar.chudali\Documents\SSIS analyzer\SSISAnalyticsDashboard\bin\Debug\net8.0\Microsoft.Extensions.Hosting.Abstractions.dll
 C:\Users\sagar.chudali\Documents\SSIS analyzer\SSISAnalyticsDashboard\bin\Debug\net8.0\Microsoft.Extensions.ObjectPool.dll
 C:\Users\sagar.chudali\Documents\SSIS analyzer\SSISAnalyticsDashboard\bin\Debug\net8.0\System.Net.WebSockets.WebSocketProtocol.dll
+C:\Users\sagar.chudali\Documents\SSIS analyzer\SSISAnalyticsDashboard\obj\Debug\net8.0\SSISAnalyticsDashboard.sourcelink.json

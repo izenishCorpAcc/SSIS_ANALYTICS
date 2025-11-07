@@ -24,7 +24,8 @@ namespace SSISAnalyticsDashboard.Controllers
                     Metrics = await _dataService.GetMetricsAsync(),
                     Trends = await _dataService.GetTrendsAsync(),
                     RecentErrors = await _dataService.GetErrorsAsync(),
-                    RecentExecutions = await _dataService.GetExecutionsAsync()
+                    RecentExecutions = await _dataService.GetExecutionsAsync(),
+                    LastExecutedPackages = await _dataService.GetLastExecutedPackagesAsync(10)
                 };
 
                 return View(viewModel);
@@ -65,6 +66,21 @@ namespace SSISAnalyticsDashboard.Controllers
             {
                 _logger.LogError(ex, "Error fetching trends");
                 return StatusCode(500, new { error = "Failed to fetch trends" });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetLastExecutedPackages()
+        {
+            try
+            {
+                var packages = await _dataService.GetLastExecutedPackagesAsync(10);
+                return Json(packages);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching last executed packages");
+                return StatusCode(500, new { error = "Failed to fetch last executed packages" });
             }
         }
     }
