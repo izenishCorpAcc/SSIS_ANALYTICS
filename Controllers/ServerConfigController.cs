@@ -51,8 +51,10 @@ namespace SSISAnalyticsDashboard.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Index(ServerConfigViewModel model)
         {
-            // Check if this is an AJAX request
-            bool isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest";
+            try
+            {
+                // Check if this is an AJAX request
+                bool isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest";
 
             if (!ModelState.IsValid)
             {
@@ -163,11 +165,20 @@ namespace SSISAnalyticsDashboard.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Configuration failed");
+                
                 string errorMsg = $"Configuration error: {ex.Message}";
                 if (isAjax)
                     return Json(new { success = false, message = errorMsg });
                 model.ErrorMessage = errorMsg;
                 return View(model);
+            }
+            }
+            catch (Exception outerEx)
+            {
+                _logger.LogError(outerEx, "Unexpected error in ServerConfig");
+                
+                // Always try to return JSON for safety
+                return Json(new { success = false, message = $"Unexpected error: {outerEx.Message}" });
             }
         }
 
