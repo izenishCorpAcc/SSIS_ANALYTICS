@@ -51,15 +51,23 @@ namespace SSISAnalyticsDashboard.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Index(ServerConfigViewModel model)
         {
+            // Check if this is an AJAX request
+            bool isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest";
+
             if (!ModelState.IsValid)
             {
+                if (isAjax)
+                    return Json(new { success = false, message = "Validation failed" });
                 return View(model);
             }
 
             // Validate SQL Auth credentials
             if (model.AuthenticationMode == "SQL" && (string.IsNullOrEmpty(model.Username) || string.IsNullOrEmpty(model.Password)))
             {
-                model.ErrorMessage = "Username and Password are required for SQL Server Authentication.";
+                string errorMsg = "Username and Password are required for SQL Server Authentication.";
+                if (isAjax)
+                    return Json(new { success = false, message = errorMsg });
+                model.ErrorMessage = errorMsg;
                 return View(model);
             }
 
@@ -123,19 +131,36 @@ namespace SSISAnalyticsDashboard.Controllers
                 TempData["SuccessMessage"] = $"Successfully configured server: {model.ServerName} with {model.AuthenticationMode} Authentication";
                 TempData["ShowSuccessAlert"] = "true";
                 
+                // Return JSON for AJAX requests, redirect for normal requests
+                if (isAjax)
+                {
+                    return Json(new { 
+                        success = true, 
+                        message = $"Successfully configured server: {model.ServerName} with {model.AuthenticationMode} Authentication",
+                        serverName = model.ServerName,
+                        authMode = model.AuthenticationMode
+                    });
+                }
+                
                 // Use absolute URL to avoid middleware redirect loop
                 return Redirect("/Dashboard/Index");
             }
             catch (SqlException ex)
             {
                 _logger.LogError(ex, "Database connection failed");
-                model.ErrorMessage = $"Failed to connect to server: {ex.Message}";
+                string errorMsg = $"Failed to connect to server: {ex.Message}";
+                if (isAjax)
+                    return Json(new { success = false, message = errorMsg });
+                model.ErrorMessage = errorMsg;
                 return View(model);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Configuration failed");
-                model.ErrorMessage = $"Configuration error: {ex.Message}";
+                string errorMsg = $"Configuration error: {ex.Message}";
+                if (isAjax)
+                    return Json(new { success = false, message = errorMsg });
+                model.ErrorMessage = errorMsg;
                 return View(model);
             }
         }

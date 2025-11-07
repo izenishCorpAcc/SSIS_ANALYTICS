@@ -199,22 +199,28 @@
                 
                 fetch(form.action, {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
                 })
-                .then(response => {
-                    if (response.redirected) {
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
                         // Configuration successful - show success alert
-                        showSuccessAlert(formData.get('ServerName'), formData.get('AuthenticationMode'));
+                        showSuccessAlert(data.serverName, data.authMode);
                     } else {
-                        // Error occurred - reload page to show error
-                        window.location.reload();
+                        // Show error alert
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalBtnText;
+                        showErrorAlert(data.message);
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = originalBtnText;
-                    alert('An error occurred. Please try again.');
+                    showErrorAlert('An unexpected error occurred. Please try again.');
                 });
             });
         });
@@ -254,6 +260,50 @@
             setTimeout(function() {
                 window.location.href = '/Dashboard/Index';
             }, 2500);
+        }
+        
+        function showErrorAlert(message) {
+            // Show error alert popup
+            const alertHtml = `
+                <div class="modal fade show" id="errorModal" tabindex="-1" style="display: block; background: rgba(0,0,0,0.5);">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-danger text-white">
+                                <h5 class="modal-title">
+                                    <i class="bi bi-exclamation-triangle-fill"></i> Connection Failed
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" onclick="closeErrorModal()"></button>
+                            </div>
+                            <div class="modal-body text-center py-4">
+                                <div class="mb-3">
+                                    <i class="bi bi-x-circle text-danger" style="font-size: 4rem;"></i>
+                                </div>
+                                <h5 class="mb-3">Connection Failed</h5>
+                                <p class="text-danger mb-2">
+                                    ${message}
+                                </p>
+                                <p class="text-muted small">
+                                    Please check your server name and authentication settings.
+                                </p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" onclick="closeErrorModal()">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', alertHtml);
+        }
+        
+        function closeErrorModal() {
+            const modal = document.getElementById('errorModal');
+            if (modal) {
+                modal.remove();
+            }
         }
         
         // Toggle authentication fields based on selected mode
