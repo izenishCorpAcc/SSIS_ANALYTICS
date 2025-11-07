@@ -71,23 +71,10 @@
                             </div>
                         }
 
-                        <form asp-action="Index" method="post" class="needs-validation" novalidate>
+                        <form asp-action="Index" method="post">
                             @Html.AntiForgeryToken()
                             
-                            <div class="mb-4">
-                                <label asp-for="AuthenticationMode" class="form-label">
-                                    <i class="bi bi-shield-check"></i> Authentication Mode
-                                </label>
-                                <select asp-for="AuthenticationMode" class="form-select form-select-lg" id="authMode" onchange="toggleAuthFields()">
-                                    <option value="Windows">Windows Authentication</option>
-                                    <option value="SQL">SQL Server Authentication</option>
-                                </select>
-                                <span asp-validation-for="AuthenticationMode" class="text-danger"></span>
-                                <div class="form-text">
-                                    <i class="bi bi-info-circle"></i> 
-                                    Select your authentication method
-                                </div>
-                            </div>
+                            <input type="hidden" asp-for="AuthenticationMode" value="Windows" />
 
                             <div class="mb-4">
                                 <label asp-for="ServerName" class="form-label">
@@ -100,46 +87,13 @@
                                 <span asp-validation-for="ServerName" class="text-danger"></span>
                                 <div class="form-text">
                                     <i class="bi bi-info-circle"></i> 
-                                    Enter your SQL Server instance name
+                                    Enter your SQL Server instance name (Windows Authentication)
                                 </div>
-                            </div>
-
-                            <div id="sqlAuthFields" style="display: none;">
-                                <div class="mb-3">
-                                    <label asp-for="Username" class="form-label">
-                                        <i class="bi bi-person"></i> Username
-                                    </label>
-                                    <input asp-for="Username" 
-                                           class="form-control form-control-lg" 
-                                           placeholder="SQL Server username" />
-                                    <span asp-validation-for="Username" class="text-danger"></span>
-                                </div>
-
-                                <div class="mb-4">
-                                    <label asp-for="Password" class="form-label">
-                                        <i class="bi bi-key"></i> Password
-                                    </label>
-                                    <input asp-for="Password" 
-                                           type="password"
-                                           class="form-control form-control-lg" 
-                                           placeholder="SQL Server password" />
-                                    <span asp-validation-for="Password" class="text-danger"></span>
-                                </div>
-                            </div>
-
-                            <div class="form-check mb-4">
-                                <input asp-for="TestConnection" 
-                                       class="form-check-input" 
-                                       type="checkbox" 
-                                       checked />
-                                <label asp-for="TestConnection" class="form-check-label">
-                                    Test connection before saving
-                                </label>
                             </div>
 
                             <div class="d-grid gap-2">
                                 <button type="submit" class="btn btn-primary btn-lg">
-                                    <i class="bi bi-check-circle"></i> Configure & Connect
+                                    <i class="bi bi-check-circle"></i> Save & Go to Dashboard
                                 </button>
                                 
                                 @if (Model.IsConfigured)
@@ -152,11 +106,11 @@
                         </form>
 
                         <div class="mt-4 p-3 bg-light rounded">
-                            <h6 class="mb-2"><i class="bi bi-shield-lock"></i> Security Information</h6>
-                            <ul class="small text-muted mb-0" id="securityInfo">
+                            <h6 class="mb-2"><i class="bi bi-shield-lock"></i> Connection Information</h6>
+                            <ul class="small text-muted mb-0">
                                 <li>Using Windows Authentication (Integrated Security)</li>
                                 <li>Connecting to SSISDB catalog database</li>
-                                <li>Connection string saved to appsettings.json</li>
+                                <li>Connection string will be saved to appsettings.json</li>
                             </ul>
                         </div>
                     </div>
@@ -176,34 +130,5 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-    
-    <script>
-        // Toggle authentication fields based on selected mode
-        function toggleAuthFields() {
-            const authMode = document.getElementById('authMode').value;
-            const sqlAuthFields = document.getElementById('sqlAuthFields');
-            const securityInfo = document.getElementById('securityInfo');
-            
-            if (authMode === 'SQL') {
-                sqlAuthFields.style.display = 'block';
-                securityInfo.innerHTML = `
-                    <li>SQL Authentication is not yet supported</li>
-                    <li>Please use Windows Authentication</li>
-                `;
-            } else {
-                sqlAuthFields.style.display = 'none';
-                securityInfo.innerHTML = `
-                    <li>Using Windows Authentication (Integrated Security)</li>
-                    <li>Connecting to SSISDB catalog database</li>
-                    <li>Connection string saved to appsettings.json</li>
-                `;
-            }
-        }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            toggleAuthFields();
-        });
-    </script>
 }
 
