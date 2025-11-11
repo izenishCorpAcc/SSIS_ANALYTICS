@@ -49,8 +49,9 @@ namespace SSISAnalyticsDashboard.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading dashboard");
-                ViewBag.ErrorMessage = "Failed to load dashboard data. Please check your database connection.";
+                _logger.LogError(ex, $"Error loading dashboard with business unit: {businessUnit ?? "ALL"}");
+                ViewBag.ErrorMessage = $"Failed to load dashboard data: {ex.Message}";
+                ViewBag.SelectedBusinessUnit = businessUnit ?? "";
                 return View(new DashboardViewModel());
             }
         }
