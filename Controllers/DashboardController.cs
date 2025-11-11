@@ -25,8 +25,13 @@ namespace SSISAnalyticsDashboard.Controllers
                 return RedirectToAction("Index", "ServerConfig");
             }
 
+            // Pass businessUnit to view for maintaining dropdown selection
+            ViewBag.SelectedBusinessUnit = businessUnit ?? "";
+
             try
             {
+                _logger.LogInformation($"Loading dashboard with business unit filter: {businessUnit ?? "ALL"}");
+
                 var viewModel = new DashboardViewModel
                 {
                     Metrics = await _dataService.GetMetricsAsync(businessUnit),
