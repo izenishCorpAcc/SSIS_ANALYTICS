@@ -2,21 +2,21 @@ namespace SSISAnalyticsDashboard.Helpers
 {
     public static class BusinessUnitHelper
     {
-        public static string GetBusinessUnit(string projectName)
+        public static string GetBusinessUnit(string packageName)
         {
-            if (string.IsNullOrEmpty(projectName))
+            if (string.IsNullOrEmpty(packageName))
                 return "Uncategorized";
 
-            if (projectName.StartsWith("CR_", StringComparison.OrdinalIgnoreCase))
+            if (packageName.StartsWith("CR", StringComparison.OrdinalIgnoreCase))
                 return "ClientRepo";
             
-            if (projectName.StartsWith("CN_", StringComparison.OrdinalIgnoreCase))
+            if (packageName.StartsWith("CN", StringComparison.OrdinalIgnoreCase))
                 return "ChartNav";
             
-            if (projectName.StartsWith("EDS_", StringComparison.OrdinalIgnoreCase))
+            if (packageName.StartsWith("EDS", StringComparison.OrdinalIgnoreCase))
                 return "EDS";
             
-            if (projectName.StartsWith("HIM_", StringComparison.OrdinalIgnoreCase))
+            if (packageName.StartsWith("HIM", StringComparison.OrdinalIgnoreCase))
                 return "HIM";
 
             return "Uncategorized";
@@ -31,11 +31,11 @@ namespace SSISAnalyticsDashboard.Helpers
             
             return upperUnit switch
             {
-                "CLIENTREPO" => " AND e.project_name LIKE 'CR[_]%'",
-                "CHARTNAV" => " AND e.project_name LIKE 'CN[_]%'",
-                "EDS" => " AND e.project_name LIKE 'EDS[_]%'",
-                "HIM" => " AND e.project_name LIKE 'HIM[_]%'",
-                "UNCATEGORIZED" => " AND e.project_name NOT LIKE 'CR[_]%' AND e.project_name NOT LIKE 'CN[_]%' AND e.project_name NOT LIKE 'EDS[_]%' AND e.project_name NOT LIKE 'HIM[_]%'",
+                "CLIENTREPO" => " AND e.package_name LIKE 'CR%'",
+                "CHARTNAV" => " AND e.package_name LIKE 'CN%'",
+                "EDS" => " AND e.package_name LIKE 'EDS%'",
+                "HIM" => " AND e.package_name LIKE 'HIM%'",
+                "UNCATEGORIZED" => " AND e.package_name NOT LIKE 'CR%' AND e.package_name NOT LIKE 'CN%' AND e.package_name NOT LIKE 'EDS%' AND e.package_name NOT LIKE 'HIM%'",
                 _ => ""
             };
         }
