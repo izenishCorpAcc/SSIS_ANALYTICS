@@ -105,11 +105,11 @@
                                 <label class="form-label">Business Unit</label>
                                 <select class="form-select" id="businessUnitFilter">
                                     <option value="">All Units</option>
-                                    <option value="ClientRepo">ClientRepo (CR_)</option>
-                                    <option value="ChartNav">ChartNav (CN_)</option>
+                                    <option value="CLIENTREPO">ClientRepo (CR_)</option>
+                                    <option value="CHARTNAV">ChartNav (CN_)</option>
                                     <option value="EDS">EDS (EDS_)</option>
                                     <option value="HIM">HIM (HIM_)</option>
-                                    <option value="Uncategorized">Uncategorized</option>
+                                    <option value="UNCATEGORIZED">Uncategorized</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
@@ -136,9 +136,14 @@
                                 <input type="text" class="form-control" id="packageSearch" placeholder="Search by package name...">
                             </div>
                             <div class="col-md-2 d-flex align-items-end">
-                                <button class="btn btn-primary w-100" onclick="applyFilters()">
-                                    <i class="bi bi-check2-circle"></i> Apply
-                                </button>
+                                <div class="btn-group w-100" role="group">
+                                    <button class="btn btn-primary" onclick="applyFilters()">
+                                        <i class="bi bi-check2-circle"></i> Apply
+                                    </button>
+                                    <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                                        <i class="bi bi-x-circle"></i> Clear
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -945,13 +950,8 @@
 
         // Manual refresh button handler
         function manualRefresh() {
-            // Preserve business unit filter on refresh
-            const businessUnit = document.getElementById('businessUnitFilter').value;
-            if (businessUnit) {
-                window.location.href = `?businessUnit=${encodeURIComponent(businessUnit)}`;
-            } else {
-                window.location.reload();
-            }
+            // Clear filters and refresh to show all data
+            window.location.href = window.location.pathname;
         }
 
         // SignalR Connection
@@ -1095,6 +1095,16 @@
             filterTable('lastExecutedPackagesTable', statusFilter, searchTerm, 1, 4);
             
             console.log('✅ Filters applied');
+        }
+
+        function clearFilters() {
+            // Clear all filter fields
+            document.getElementById('businessUnitFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('packageSearch').value = '';
+            
+            // Reload page without any query parameters
+            window.location.href = window.location.pathname;
         }
 
         function filterTable(tableId, status, searchTerm, packageNameCol, statusCol) {
