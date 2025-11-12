@@ -37,6 +37,8 @@ namespace SSISAnalyticsDashboard.Services
                 await connection.OpenAsync();
 
                 var businessUnitFilter = BusinessUnitHelper.GetBusinessUnitWhereClause(businessUnit);
+                
+                _logger.LogInformation($"GetMetricsAsync - BusinessUnit: {businessUnit ?? "NULL"}, Filter: {businessUnitFilter}");
 
                 var query = $@"
                     SELECT 
@@ -47,6 +49,8 @@ namespace SSISAnalyticsDashboard.Services
                     FROM [SSISDB].[catalog].[executions] e
                     WHERE start_time >= DATEADD(day, -30, GETDATE())
                     {businessUnitFilter}";
+                    
+                _logger.LogInformation($"Executing query: {query}");
 
                 using var command = new SqlCommand(query, connection);
                 using var reader = await command.ExecuteReaderAsync();
