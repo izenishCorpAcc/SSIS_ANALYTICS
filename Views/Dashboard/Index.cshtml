@@ -1175,6 +1175,9 @@
             // Filter Last Executed Packages (Package Name at index 1, Status at index 4)
             filterTable('lastExecutedPackagesTable', statusFilter, searchTerm, 1, 4);
             
+            // Recalculate metrics based on filtered data
+            updateMetricsFromFilteredData('lastExecutedPackagesTable');
+            
             console.log('✅ Filters applied:', { statusFilter, searchTerm });
         }
 
@@ -1195,6 +1198,9 @@
             // Show all rows in both tables
             showAllRows('recentExecutionsTable');
             showAllRows('lastExecutedPackagesTable');
+            
+            // Reset metrics to original values
+            updateMetricsFromFilteredData('lastExecutedPackagesTable');
             
             console.log('✅ All filters cleared');
         }
@@ -1266,6 +1272,94 @@
             }
             
             console.log(`${tableId}: ${visibleCount} of ${rows.length} rows visible`);
+        }
+        
+        // Recalculate metrics based on visible filtered rows
+        function updateMetricsFromFilteredData(tableId) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            
+            const tbody = table.getElementsByTagName('tbody')[0];
+            if (!tbody) return;
+            
+            const rows = tbody.getElementsByTagName('tr');
+            let totalExecutions = 0;
+            let successfulExecutions = 0;
+            let failedExecutions = 0;
+            let totalDuration = 0;
+            let countWithDuration = 0;
+            
+            for (let row of rows) {
+                // Only count visible rows
+                if (row.style.display === 'none') continue;
+                
+                const cells = row.getElementsByTagName('td');
+                if (cells.length === 0 || cells[0].getAttribute('colspan')) continue;
+                
+                totalExecutions++;
+                
+                // Get status from column 4 (index 4)
+                const statusCell = cells[4];
+                if (statusCell) {
+                    const statusText = statusCell.textContent.toLowerCase().trim();
+                    if (statusText.includes('succeed')) {
+                        successfulExecutions++;
+                    } else if (statusText.includes('fail')) {
+                        failedExecutions++;
+                    }
+                }
+                
+                // Get duration from column 7 (index 7) - last column
+                const durationCell = cells[7];
+                if (durationCell) {
+                    const durationText = durationCell.textContent.trim();
+                    // Parse duration like "1h 23m 45s" or "23m 45s" or "45s"
+                    const hours = durationText.match(/(\d+)h/);
+                    const minutes = durationText.match(/(\d+)m/);
+                    const seconds = durationText.match(/(\d+)s/);
+                    
+                    const totalSeconds = 
+                        (hours ? parseInt(hours[1]) * 3600 : 0) +
+                        (minutes ? parseInt(minutes[1]) * 60 : 0) +
+                        (seconds ? parseInt(seconds[1]) : 0);
+                    
+                    if (totalSeconds > 0) {
+                        totalDuration += totalSeconds;
+                        countWithDuration++;
+                    }
+                }
+            }
+            
+            // Calculate success rate
+            const successRate = totalExecutions > 0 
+                ? Math.round((successfulExecutions / totalExecutions) * 100 * 100) / 100 
+                : 0;
+            
+            // Calculate average duration
+            const avgDuration = countWithDuration > 0 
+                ? Math.round(totalDuration / countWithDuration) 
+                : 0;
+            
+            // Update metric cards
+            document.getElementById('totalExecutions').textContent = totalExecutions;
+            document.getElementById('successfulExecutions').textContent = successfulExecutions;
+            document.getElementById('successRate').textContent = `${successRate}% success rate`;
+            document.getElementById('failedExecutions').textContent = failedExecutions;
+            document.getElementById('avgDuration').textContent = `${avgDuration} s`;
+            
+            // Update success chart
+            if (successChart) {
+                successChart.data.datasets[0].data = [successfulExecutions, failedExecutions];
+                successChart.update();
+            }
+            
+            console.log('📊 Metrics updated from filtered data:', { 
+                totalExecutions, 
+                successfulExecutions, 
+                failedExecutions, 
+                successRate, 
+                avgDuration 
+            });
         }
 
         // Export to CSV functionality
