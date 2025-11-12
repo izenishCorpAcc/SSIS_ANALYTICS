@@ -1211,7 +1211,7 @@
             csvContent += "Last 10 Executed Packages\n";
             csvContent += "Execution ID,Package Name,Folder,Project,Status,Start Time,End Time,Duration (seconds)\n";
             
-            @foreach (var pkg in Model.LastExecutedPackages ?? Enumerable.Empty<SSISAnalyticsDashboard.Models.ExecutionSummary>())
+            @foreach (var pkg in Model.LastExecutedPackages ?? new List<SSISAnalyticsDashboard.Models.PackageExecution>())
             {
                 var endTime = pkg.EndTime.HasValue ? pkg.EndTime.Value.ToString("yyyy-MM-dd HH:mm:ss") : "N/A";
                 <text>
