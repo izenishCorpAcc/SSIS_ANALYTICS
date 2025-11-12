@@ -101,11 +101,11 @@
                                 <label style="font-family: var(--font-retro-display); color: var(--neon-cyan); font-size: var(--retro-text-sm); text-transform: uppercase; margin-bottom: 8px; display: block;">Business Unit</label>
                                 <select class="retro-input" id="businessUnitFilter" style="padding: 8px;">
                                     <option value="">All Units</option>
-                                    <option value="CLIENTREPO">ClientRepo (CR)</option>
-                                    <option value="CHARTNAV">ChartNav (CN)</option>
-                                    <option value="EDS">EDS (EDS)</option>
-                                    <option value="HIM">HIM (HIM)</option>
-                                    <option value="UNCATEGORIZED">Uncategorized</option>
+                                    <option value="CLIENTREPO" @(ViewBag.SelectedBusinessUnit == "CLIENTREPO" ? "selected" : "")>ClientRepo (CR)</option>
+                                    <option value="CHARTNAV" @(ViewBag.SelectedBusinessUnit == "CHARTNAV" ? "selected" : "")>ChartNav (CN)</option>
+                                    <option value="EDS" @(ViewBag.SelectedBusinessUnit == "EDS" ? "selected" : "")>EDS (EDS)</option>
+                                    <option value="HIM" @(ViewBag.SelectedBusinessUnit == "HIM" ? "selected" : "")>HIM (HIM)</option>
+                                    <option value="UNCATEGORIZED" @(ViewBag.SelectedBusinessUnit == "UNCATEGORIZED" ? "selected" : "")>Uncategorized</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
@@ -1101,10 +1101,36 @@
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
             // Set selected business unit from server
-            const selectedBusinessUnit = '@ViewBag.SelectedBusinessUnit';
+            const selectedBusinessUnit = '@(ViewBag.SelectedBusinessUnit ?? "")';
             if (selectedBusinessUnit) {
-                document.getElementById('businessUnitFilter').value = selectedBusinessUnit;
-                console.log('📌 Business Unit Filter Active:', selectedBusinessUnit);
+                const businessUnitDropdown = document.getElementById('businessUnitFilter');
+                if (businessUnitDropdown) {
+                    businessUnitDropdown.value = selectedBusinessUnit;
+                    console.log('📌 Business Unit Filter Active:', selectedBusinessUnit);
+                }
+            }
+            
+            // Add Enter key support for search box
+            const searchBox = document.getElementById('packageSearch');
+            if (searchBox) {
+                searchBox.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        applyFilters();
+                    }
+                });
+            }
+            
+            // Auto-apply filters when dropdowns change
+            const statusFilter = document.getElementById('statusFilter');
+            if (statusFilter) {
+                statusFilter.addEventListener('change', function() {
+                    const currentBU = '@(ViewBag.SelectedBusinessUnit ?? "")';
+                    const selectedBU = document.getElementById('businessUnitFilter').value;
+                    if (selectedBU === currentBU) {
+                        applyFilters();
+                    }
+                });
             }
             
             initCharts();
@@ -1131,63 +1157,115 @@
             const statusFilter = document.getElementById('statusFilter').value;
             const searchTerm = document.getElementById('packageSearch').value.toLowerCase();
             
-            // Reload page with businessUnit filter if selected
-            if (businessUnit) {
-                window.location.href = `?businessUnit=${encodeURIComponent(businessUnit)}`;
+            // If business unit changed, reload page with the new business unit filter
+            const currentBusinessUnit = '@(ViewBag.SelectedBusinessUnit ?? "")';
+            if (businessUnit !== currentBusinessUnit) {
+                if (businessUnit) {
+                    window.location.href = `?businessUnit=${encodeURIComponent(businessUnit)}`;
+                } else {
+                    window.location.href = window.location.pathname;
+                }
                 return;
             }
             
             // Client-side filtering for status and search
-            // Filter Recent Executions
+            // Filter Recent Executions (Package at index 1, Status at index 3)
             filterTable('recentExecutionsTable', statusFilter, searchTerm, 1, 3);
             
-            // Filter Last Executed Packages
+            // Filter Last Executed Packages (Package Name at index 1, Status at index 4)
             filterTable('lastExecutedPackagesTable', statusFilter, searchTerm, 1, 4);
             
-            console.log('✅ Filters applied');
+            console.log('✅ Filters applied:', { statusFilter, searchTerm });
         }
 
         function clearFilters() {
+            // Check if we need to reload the page (business unit is set)
+            const currentBusinessUnit = '@(ViewBag.SelectedBusinessUnit ?? "")';
+            if (currentBusinessUnit && currentBusinessUnit.length > 0) {
+                // Reload page without any query parameters
+                window.location.href = window.location.pathname;
+                return;
+            }
+            
             // Clear all filter fields
             document.getElementById('businessUnitFilter').value = '';
             document.getElementById('statusFilter').value = '';
             document.getElementById('packageSearch').value = '';
             
-            // Reload page without any query parameters
-            window.location.href = window.location.pathname;
+            // Show all rows in both tables
+            showAllRows('recentExecutionsTable');
+            showAllRows('lastExecutedPackagesTable');
+            
+            console.log('✅ All filters cleared');
+        }
+        
+        function showAllRows(tableId) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            
+            const tbody = table.getElementsByTagName('tbody')[0];
+            if (!tbody) return;
+            
+            const rows = tbody.getElementsByTagName('tr');
+            for (let row of rows) {
+                const cells = row.getElementsByTagName('td');
+                // Show all data rows, but keep "no data" rows hidden if they exist
+                if (cells.length > 0 && !cells[0].getAttribute('colspan')) {
+                    row.style.display = '';
+                }
+            }
         }
 
         function filterTable(tableId, status, searchTerm, packageNameCol, statusCol) {
             const table = document.getElementById(tableId);
-            if (!table) return;
+            if (!table) {
+                console.warn(`Table ${tableId} not found`);
+                return;
+            }
             
-            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+            const tbody = table.getElementsByTagName('tbody')[0];
+            if (!tbody) {
+                console.warn(`Table body for ${tableId} not found`);
+                return;
+            }
+            
+            const rows = tbody.getElementsByTagName('tr');
             let visibleCount = 0;
             
             for (let row of rows) {
                 const cells = row.getElementsByTagName('td');
-                if (cells.length === 0 || cells[0].getAttribute('colspan')) continue;
                 
-                const packageName = cells[packageNameCol].textContent.toLowerCase();
-                const rowStatus = cells[statusCol].textContent.trim();
+                // Skip empty rows or "no data" rows
+                if (cells.length === 0 || cells[0].getAttribute('colspan')) {
+                    row.style.display = 'none';
+                    continue;
+                }
+                
+                // Get package name and status text
+                const packageName = cells[packageNameCol] ? cells[packageNameCol].textContent.toLowerCase().trim() : '';
+                const rowStatus = cells[statusCol] ? cells[statusCol].textContent.toLowerCase().trim() : '';
                 
                 let showRow = true;
                 
-                // Status filter
-                if (status && !rowStatus.includes(status)) {
-                    showRow = false;
+                // Status filter - check if status contains the filter text
+                if (status && status.length > 0) {
+                    if (!rowStatus.includes(status.toLowerCase())) {
+                        showRow = false;
+                    }
                 }
                 
-                // Search filter
-                if (searchTerm && !packageName.includes(searchTerm)) {
-                    showRow = false;
+                // Search filter - check if package name contains search term
+                if (searchTerm && searchTerm.length > 0) {
+                    if (!packageName.includes(searchTerm)) {
+                        showRow = false;
+                    }
                 }
                 
                 row.style.display = showRow ? '' : 'none';
                 if (showRow) visibleCount++;
             }
             
-            console.log(`${tableId}: ${visibleCount} rows visible`);
+            console.log(`${tableId}: ${visibleCount} of ${rows.length} rows visible`);
         }
 
         // Export to CSV functionality
