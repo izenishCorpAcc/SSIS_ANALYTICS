@@ -101,11 +101,11 @@
                                 <label style="font-family: var(--font-retro-display); color: var(--neon-cyan); font-size: var(--retro-text-sm); text-transform: uppercase; margin-bottom: 8px; display: block;">Business Unit</label>
                                 <select class="retro-input" id="businessUnitFilter" style="padding: 8px;">
                                     <option value="">All Units</option>
-                                    <option value="CLIENTREPO" @(ViewBag.SelectedBusinessUnit == "CLIENTREPO" ? "selected" : "")>ClientRepo (CR)</option>
-                                    <option value="CHARTNAV" @(ViewBag.SelectedBusinessUnit == "CHARTNAV" ? "selected" : "")>ChartNav (CN)</option>
-                                    <option value="EDS" @(ViewBag.SelectedBusinessUnit == "EDS" ? "selected" : "")>EDS (EDS)</option>
-                                    <option value="HIM" @(ViewBag.SelectedBusinessUnit == "HIM" ? "selected" : "")>HIM (HIM)</option>
-                                    <option value="UNCATEGORIZED" @(ViewBag.SelectedBusinessUnit == "UNCATEGORIZED" ? "selected" : "")>Uncategorized</option>
+                                    <option value="CLIENTREPO" selected="@(ViewBag.SelectedBusinessUnit == "CLIENTREPO")">ClientRepo (CR)</option>
+                                    <option value="CHARTNAV" selected="@(ViewBag.SelectedBusinessUnit == "CHARTNAV")">ChartNav (CN)</option>
+                                    <option value="EDS" selected="@(ViewBag.SelectedBusinessUnit == "EDS")">EDS (EDS)</option>
+                                    <option value="HIM" selected="@(ViewBag.SelectedBusinessUnit == "HIM")">HIM (HIM)</option>
+                                    <option value="UNCATEGORIZED" selected="@(ViewBag.SelectedBusinessUnit == "UNCATEGORIZED")">Uncategorized</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
