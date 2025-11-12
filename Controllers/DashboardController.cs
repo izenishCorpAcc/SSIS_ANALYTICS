@@ -17,6 +17,9 @@ namespace SSISAnalyticsDashboard.Controllers
 
         public async Task<IActionResult> Index(string? businessUnit = null)
         {
+            _logger.LogInformation($"====== Dashboard Index Called ======");
+            _logger.LogInformation($"Business Unit Parameter: '{businessUnit ?? "NULL"}'");
+            
             // Check if connection string exists in session
             var connectionString = HttpContext.Session.GetString("SSISDBConnection");
             if (string.IsNullOrEmpty(connectionString))
@@ -27,6 +30,8 @@ namespace SSISAnalyticsDashboard.Controllers
 
             // Pass businessUnit to view for maintaining dropdown selection
             ViewBag.SelectedBusinessUnit = businessUnit ?? "";
+            
+            _logger.LogInformation($"ViewBag.SelectedBusinessUnit set to: '{ViewBag.SelectedBusinessUnit}'");
 
             try
             {
