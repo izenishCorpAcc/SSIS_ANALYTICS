@@ -56,7 +56,7 @@ namespace SSISAnalyticsDashboard.Services
                     var totalExecutions = reader.GetInt32(0);
                     var failedExecutions = reader.GetInt32(1);
                     var successfulExecutions = reader.GetInt32(2);
-                    var avgDuration = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);
+                    var avgDuration = reader.IsDBNull(3) ? 0 : Convert.ToInt32(reader.GetValue(3));
 
                     var successRate = totalExecutions > 0 
                         ? (decimal)successfulExecutions / totalExecutions * 100 
@@ -114,7 +114,7 @@ namespace SSISAnalyticsDashboard.Services
                         Date = reader.GetDateTime(0).ToString("yyyy-MM-dd"),
                         Success = reader.GetInt32(1),
                         Failed = reader.GetInt32(2),
-                        AvgDuration = reader.IsDBNull(3) ? 0 : reader.GetInt32(3)
+                        AvgDuration = reader.IsDBNull(3) ? 0 : Convert.ToInt32(reader.GetValue(3))
                     });
                 }
 
@@ -229,7 +229,7 @@ namespace SSISAnalyticsDashboard.Services
                         Status = reader.GetString(4),
                         StartTime = reader.GetDateTimeOffset(5).DateTime,
                         EndTime = reader.IsDBNull(6) ? null : reader.GetDateTimeOffset(6).DateTime,
-                        Duration = reader.IsDBNull(7) ? 0 : reader.GetInt32(7)
+                        Duration = reader.IsDBNull(7) ? 0 : Convert.ToInt32(reader.GetValue(7))
                     });
                 }
 
@@ -293,7 +293,7 @@ namespace SSISAnalyticsDashboard.Services
                         Status = reader.GetString(4),
                         StartTime = reader.GetDateTimeOffset(5).DateTime,
                         EndTime = reader.IsDBNull(6) ? null : reader.GetDateTimeOffset(6).DateTime,
-                        Duration = reader.IsDBNull(7) ? 0 : reader.GetInt32(7)
+                        Duration = reader.IsDBNull(7) ? 0 : Convert.ToInt32(reader.GetValue(7))
                     });
                 }
 
@@ -347,7 +347,7 @@ namespace SSISAnalyticsDashboard.Services
                 var currentExecutions = new List<CurrentExecution>();
                 while (await reader.ReadAsync())
                 {
-                    var durationSeconds = reader.GetInt32(3);
+                    var durationSeconds = Convert.ToInt32(reader.GetValue(3));
                     currentExecutions.Add(new CurrentExecution
                     {
                         ExecutionId = reader.GetInt64(0),
@@ -414,9 +414,9 @@ namespace SSISAnalyticsDashboard.Services
                         SuccessfulExecutions = reader.GetInt32(2),
                         FailedExecutions = reader.GetInt32(3),
                         SuccessRate = reader.GetDecimal(4),
-                        AvgDurationSeconds = reader.IsDBNull(5) ? 0 : reader.GetInt32(5),
-                        MinDurationSeconds = reader.IsDBNull(6) ? 0 : reader.GetInt32(6),
-                        MaxDurationSeconds = reader.IsDBNull(7) ? 0 : reader.GetInt32(7),
+                        AvgDurationSeconds = reader.IsDBNull(5) ? 0 : Convert.ToInt32(reader.GetValue(5)),
+                        MinDurationSeconds = reader.IsDBNull(6) ? 0 : Convert.ToInt32(reader.GetValue(6)),
+                        MaxDurationSeconds = reader.IsDBNull(7) ? 0 : Convert.ToInt32(reader.GetValue(7)),
                         LastExecutionTime = reader.IsDBNull(8) ? null : reader.GetDateTime(8),
                         LastExecutionStatus = reader.GetInt32(9) == 7 ? "Success" : "Failed"
                     });
@@ -546,7 +546,7 @@ namespace SSISAnalyticsDashboard.Services
                         PackageName = reader.GetString(1),
                         StartTime = reader.GetDateTime(2),
                         EndTime = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
-                        DurationMinutes = reader.GetInt32(4),
+                        DurationMinutes = Convert.ToInt32(reader.GetValue(4)),
                         Status = statusText,
                         StatusColor = reader.GetString(6)
                     });
