@@ -392,7 +392,7 @@
                     <div class="retro-spinner" style="width: 30px; height: 30px; border-width: 3px;"></div>
                 </div>
                 <h6 style="font-family: var(--font-retro-display); color: rgba(0, 245, 255, 0.7); font-size: var(--retro-text-sm); text-transform: uppercase; margin-bottom: var(--retro-space-1);">Total Executions</h6>
-                <h2 class="retro-neon-text" style="font-size: var(--retro-text-4xl); margin: var(--retro-space-2) 0;">@Model.Metrics.TotalExecutions</h2>
+                <h2 id="totalExecutions" class="retro-neon-text" style="font-size: var(--retro-text-4xl); margin: var(--retro-space-2) 0;">@Model.Metrics.TotalExecutions</h2>
                 <p style="color: rgba(0, 245, 255, 0.5); margin: 0;">Last 30 days</p>
             </div>
         </div>
@@ -402,8 +402,8 @@
                     <div class="retro-spinner" style="width: 30px; height: 30px; border-width: 3px; border-top-color: var(--neon-green);"></div>
                 </div>
                 <h6 style="font-family: var(--font-retro-display); color: rgba(57, 255, 20, 0.7); font-size: var(--retro-text-sm); text-transform: uppercase; margin-bottom: var(--retro-space-1);">Successful</h6>
-                <h2 class="retro-neon-text retro-neon-text--green" style="font-size: var(--retro-text-4xl); margin: var(--retro-space-2) 0;">@Model.Metrics.SuccessfulExecutions</h2>
-                <p style="color: rgba(57, 255, 20, 0.5); margin: 0;">@Model.Metrics.SuccessRate% success rate</p>
+                <h2 id="successfulExecutions" class="retro-neon-text retro-neon-text--green" style="font-size: var(--retro-text-4xl); margin: var(--retro-space-2) 0;">@Model.Metrics.SuccessfulExecutions</h2>
+                <p id="successRate" style="color: rgba(57, 255, 20, 0.5); margin: 0;">@Model.Metrics.SuccessRate% success rate</p>
             </div>
         </div>
         <div class="col-md-3">
@@ -412,7 +412,7 @@
                     <div class="retro-spinner" style="width: 30px; height: 30px; border-width: 3px; border-top-color: var(--neon-pink);"></div>
                 </div>
                 <h6 style="font-family: var(--font-retro-display); color: rgba(255, 0, 110, 0.7); font-size: var(--retro-text-sm); text-transform: uppercase; margin-bottom: var(--retro-space-1);">Failed</h6>
-                <h2 class="retro-neon-text retro-neon-text--pink" style="font-size: var(--retro-text-4xl); margin: var(--retro-space-2) 0;">@Model.Metrics.FailedExecutions</h2>
+                <h2 id="failedExecutions" class="retro-neon-text retro-neon-text--pink" style="font-size: var(--retro-text-4xl); margin: var(--retro-space-2) 0;">@Model.Metrics.FailedExecutions</h2>
                 <p style="color: rgba(255, 0, 110, 0.5); margin: 0;">Requires attention</p>
             </div>
         </div>
@@ -422,7 +422,7 @@
                     <div class="retro-spinner" style="width: 30px; height: 30px; border-width: 3px; border-top-color: var(--neon-purple);"></div>
                 </div>
                 <h6 style="font-family: var(--font-retro-display); color: rgba(157, 78, 221, 0.7); font-size: var(--retro-text-sm); text-transform: uppercase; margin-bottom: var(--retro-space-1);">Avg Duration</h6>
-                <h2 class="retro-neon-text retro-neon-text--purple" style="font-size: var(--retro-text-4xl); margin: var(--retro-space-2) 0;">@Model.Metrics.AvgDuration s</h2>
+                <h2 id="avgDuration" class="retro-neon-text retro-neon-text--purple" style="font-size: var(--retro-text-4xl); margin: var(--retro-space-2) 0;">@Model.Metrics.AvgDuration s</h2>
                 <p style="color: rgba(157, 78, 221, 0.5); margin: 0;">Average execution time</p>
             </div>
         </div>
@@ -860,12 +860,12 @@
                 
                 const metrics = await response.json();
                 
-                // Update metric cards with animation
-                document.querySelector('.col-md-3:nth-child(1) .display-4').textContent = metrics.totalExecutions;
-                document.querySelector('.col-md-3:nth-child(2) .display-4').textContent = metrics.successfulExecutions;
-                document.querySelector('.col-md-3:nth-child(2) .card-text').textContent = `${metrics.successRate}% success rate`;
-                document.querySelector('.col-md-3:nth-child(3) .display-4').textContent = metrics.failedExecutions;
-                document.querySelector('.col-md-3:nth-child(4) .display-4').textContent = `${metrics.avgDuration} s`;
+                // Update metric cards using IDs
+                document.getElementById('totalExecutions').textContent = metrics.totalExecutions;
+                document.getElementById('successfulExecutions').textContent = metrics.successfulExecutions;
+                document.getElementById('successRate').textContent = `${metrics.successRate}% success rate`;
+                document.getElementById('failedExecutions').textContent = metrics.failedExecutions;
+                document.getElementById('avgDuration').textContent = `${metrics.avgDuration} s`;
                 
                 // Update success chart
                 successChart.data.datasets[0].data = [metrics.successfulExecutions, metrics.failedExecutions];
@@ -1016,12 +1016,12 @@
             // Handle metrics updates from server
             connection.on("ReceiveMetricsUpdate", function(metrics) {
                 console.log('📡 Received metrics update via SignalR');
-                // Update UI with pushed data
-                document.querySelector('.col-md-3:nth-child(1) .display-4').textContent = metrics.totalExecutions;
-                document.querySelector('.col-md-3:nth-child(2) .display-4').textContent = metrics.successfulExecutions;
-                document.querySelector('.col-md-3:nth-child(2) .card-text').textContent = `${metrics.successRate}% success rate`;
-                document.querySelector('.col-md-3:nth-child(3) .display-4').textContent = metrics.failedExecutions;
-                document.querySelector('.col-md-3:nth-child(4) .display-4').textContent = `${metrics.avgDuration} s`;
+                // Update UI with pushed data using IDs
+                document.getElementById('totalExecutions').textContent = metrics.totalExecutions;
+                document.getElementById('successfulExecutions').textContent = metrics.successfulExecutions;
+                document.getElementById('successRate').textContent = `${metrics.successRate}% success rate`;
+                document.getElementById('failedExecutions').textContent = metrics.failedExecutions;
+                document.getElementById('avgDuration').textContent = `${metrics.avgDuration} s`;
             });
 
             // Handle trends updates from server
