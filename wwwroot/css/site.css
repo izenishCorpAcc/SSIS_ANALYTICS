@@ -1,12 +1,13 @@
 /* ==========================================
-   SSIS ANALYTICS - POLYMORPHIC UI SYSTEM
+   SSIS ANALYTICS - RETRO FUTURISM UI
    Main Stylesheet
    ========================================== */
 
-/* Import Polymorphic UI System */
-@import 'design-tokens.css';
-@import 'components.css';
-@import 'utilities.css';
+/* Import Retro Futurism System */
+@import 'retro-futurism-tokens.css';
+@import 'retro-components.css';
+@import 'retro-navbar.css';
+@import 'retro-effects.css';
 
 /* === LEGACY BOOTSTRAP COMPATIBILITY === */
 /* These rules ensure backward compatibility with existing Bootstrap classes */

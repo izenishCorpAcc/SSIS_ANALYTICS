@@ -1,0 +1,527 @@
+/* ==========================================
+   RETRO FUTURISM - VISUAL EFFECTS
+   Scanlines, CRT, Glitch, and More
+   ========================================== */
+
+/* === CRT MONITOR EFFECT === */
+.retro-crt {
+  position: relative;
+  overflow: hidden;
+}
+
+.retro-crt::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15) 0px,
+    transparent 1px,
+    transparent 2px,
+    rgba(0, 0, 0, 0.15) 3px
+  );
+  pointer-events: none;
+  z-index: 2;
+  animation: crt-scanline 8s linear infinite;
+}
+
+.retro-crt::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes crt-scanline {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(10px); }
+}
+
+/* CRT Screen Curvature */
+.retro-crt--curved {
+  border-radius: 8px;
+  transform: perspective(1000px);
+}
+
+.retro-crt--curved::after {
+  background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.5) 100%);
+}
+
+/* === GLITCH EFFECT === */
+.retro-glitch {
+  position: relative;
+  display: inline-block;
+}
+
+.retro-glitch::before,
+.retro-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+}
+
+.retro-glitch::before {
+  left: 2px;
+  text-shadow: -2px 0 var(--neon-pink);
+  clip: rect(24px, 550px, 90px, 0);
+  animation: glitch-anim-1 3s infinite linear alternate-reverse;
+}
+
+.retro-glitch::after {
+  left: -2px;
+  text-shadow: -2px 0 var(--neon-cyan);
+  clip: rect(85px, 550px, 140px, 0);
+  animation: glitch-anim-2 2s infinite linear alternate-reverse;
+}
+
+@keyframes glitch-anim-1 {
+  0% {
+    clip: rect(60px, 9999px, 120px, 0);
+  }
+  20% {
+    clip: rect(100px, 9999px, 140px, 0);
+  }
+  40% {
+    clip: rect(10px, 9999px, 80px, 0);
+  }
+  60% {
+    clip: rect(130px, 9999px, 160px, 0);
+  }
+  80% {
+    clip: rect(40px, 9999px, 90px, 0);
+  }
+  100% {
+    clip: rect(70px, 9999px, 110px, 0);
+  }
+}
+
+@keyframes glitch-anim-2 {
+  0% {
+    clip: rect(30px, 9999px, 90px, 0);
+  }
+  20% {
+    clip: rect(80px, 9999px, 130px, 0);
+  }
+  40% {
+    clip: rect(5px, 9999px, 60px, 0);
+  }
+  60% {
+    clip: rect(110px, 9999px, 150px, 0);
+  }
+  80% {
+    clip: rect(20px, 9999px, 75px, 0);
+  }
+  100% {
+    clip: rect(50px, 9999px, 95px, 0);
+  }
+}
+
+/* Glitch hover effect */
+.retro-glitch-hover:hover {
+  animation: glitch 0.3s ease-in-out;
+}
+
+/* === HOLOGRAPHIC EFFECT === */
+.retro-hologram {
+  position: relative;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 245, 255, 0.1) 0%,
+    rgba(157, 78, 221, 0.1) 25%,
+    rgba(255, 0, 110, 0.1) 50%,
+    rgba(157, 78, 221, 0.1) 75%,
+    rgba(0, 245, 255, 0.1) 100%
+  );
+  background-size: 400% 400%;
+  animation: hologram-shift 8s ease infinite;
+}
+
+.retro-hologram::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(
+    45deg,
+    var(--neon-cyan),
+    var(--neon-purple),
+    var(--neon-pink),
+    var(--neon-purple),
+    var(--neon-cyan)
+  );
+  background-size: 400% 400%;
+  animation: hologram-shift 8s ease infinite;
+  z-index: -1;
+  filter: blur(10px);
+  opacity: 0.5;
+}
+
+@keyframes hologram-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* === FILM GRAIN TEXTURE === */
+.retro-grain {
+  position: relative;
+}
+
+.retro-grain::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.3;
+  animation: grain-animation 0.5s steps(10) infinite;
+}
+
+@keyframes grain-animation {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-5%, -5%); }
+  20% { transform: translate(-10%, 5%); }
+  30% { transform: translate(5%, -10%); }
+  40% { transform: translate(-5%, 15%); }
+  50% { transform: translate(-10%, 5%); }
+  60% { transform: translate(15%, 0); }
+  70% { transform: translate(0, 10%); }
+  80% { transform: translate(-15%, 0); }
+  90% { transform: translate(10%, 5%); }
+}
+
+/* === NEON GLOW TEXT === */
+.retro-neon-text {
+  font-family: var(--font-retro-display);
+  color: var(--neon-cyan);
+  text-shadow: var(--glow-large);
+  animation: retro-glow-pulse 3s ease-in-out infinite;
+}
+
+.retro-neon-text--pink {
+  color: var(--neon-pink);
+}
+
+.retro-neon-text--purple {
+  color: var(--neon-purple);
+}
+
+.retro-neon-text--green {
+  color: var(--neon-green);
+}
+
+/* === GEOMETRIC GRID OVERLAY === */
+.retro-grid-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(rgba(0, 245, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 245, 255, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+  z-index: 0;
+  animation: grid-flow 20s linear infinite;
+}
+
+/* === RETRO CORNER DECORATIONS === */
+.retro-corners {
+  position: relative;
+  padding: var(--retro-space-3);
+}
+
+.retro-corners::before,
+.retro-corners::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--neon-cyan);
+  box-shadow: 0 0 10px var(--neon-cyan-glow);
+}
+
+.retro-corners::before {
+  top: 0;
+  left: 0;
+  border-right: none;
+  border-bottom: none;
+}
+
+.retro-corners::after {
+  bottom: 0;
+  right: 0;
+  border-left: none;
+  border-top: none;
+}
+
+/* === SCANLINE TEXT EFFECT === */
+.retro-scanline-text {
+  position: relative;
+  display: inline-block;
+}
+
+.retro-scanline-text::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    rgba(0, 0, 0, 0.3) 1px,
+    transparent 2px,
+    transparent 4px
+  );
+  pointer-events: none;
+}
+
+/* === CHROMATIC ABERRATION === */
+.retro-chromatic {
+  position: relative;
+  display: inline-block;
+}
+
+.retro-chromatic::before,
+.retro-chromatic::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.8;
+}
+
+.retro-chromatic::before {
+  color: var(--neon-cyan);
+  transform: translate(-2px, 0);
+  mix-blend-mode: screen;
+}
+
+.retro-chromatic::after {
+  color: var(--neon-pink);
+  transform: translate(2px, 0);
+  mix-blend-mode: screen;
+}
+
+/* === PIXEL BORDER EFFECT === */
+.retro-pixelated {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* === NEON BOX === */
+.retro-neon-box {
+  position: relative;
+  padding: var(--retro-space-3);
+  border: var(--retro-border-width) solid var(--neon-cyan);
+  background: rgba(10, 14, 39, 0.8);
+  box-shadow: var(--box-glow-cyan);
+  clip-path: polygon(
+    var(--retro-corner-cut) 0%, 
+    100% 0%, 
+    100% calc(100% - var(--retro-corner-cut)), 
+    calc(100% - var(--retro-corner-cut)) 100%, 
+    0% 100%, 
+    0% var(--retro-corner-cut)
+  );
+}
+
+.retro-neon-box::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  background: linear-gradient(45deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink), var(--neon-purple), var(--neon-cyan));
+  background-size: 400% 400%;
+  animation: hologram-shift 6s ease infinite;
+  z-index: -1;
+  filter: blur(15px);
+  opacity: 0.4;
+}
+
+/* === TERMINAL EFFECT === */
+.retro-terminal {
+  background: rgba(10, 14, 39, 0.95);
+  border: var(--retro-border-width) solid var(--neon-green);
+  box-shadow: var(--box-glow-green);
+  padding: var(--retro-space-3);
+  font-family: var(--font-retro-mono);
+  color: var(--neon-green);
+  position: relative;
+  overflow: hidden;
+}
+
+.retro-terminal::before {
+  content: '>';
+  position: absolute;
+  left: var(--retro-space-2);
+  top: var(--retro-space-2);
+  color: var(--neon-green);
+  text-shadow: var(--glow-medium);
+  animation: cursor-blink 1s step-end infinite;
+}
+
+@keyframes cursor-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* === DIGITAL RAIN BACKGROUND === */
+.retro-matrix {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--retro-black);
+  overflow: hidden;
+  z-index: -1;
+  opacity: 0.3;
+}
+
+/* This would require JavaScript for the full effect, but here's a CSS-only approximation */
+.retro-matrix::before {
+  content: '01010101010101010101010101010101010101010101';
+  position: absolute;
+  top: -100%;
+  left: 0;
+  width: 100%;
+  font-family: var(--font-retro-mono);
+  font-size: 12px;
+  color: var(--neon-green);
+  text-shadow: var(--glow-small);
+  line-height: 1.5;
+  word-wrap: break-word;
+  animation: matrix-rain 10s linear infinite;
+}
+
+@keyframes matrix-rain {
+  0% {
+    top: -100%;
+  }
+  100% {
+    top: 100%;
+  }
+}
+
+/* === WIREFRAME EFFECT === */
+.retro-wireframe {
+  border: 1px solid var(--neon-cyan);
+  background: transparent;
+  position: relative;
+}
+
+.retro-wireframe::before,
+.retro-wireframe::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--neon-cyan);
+  box-shadow: 0 0 5px var(--neon-cyan-glow);
+}
+
+.retro-wireframe::before {
+  top: -2px;
+  left: -2px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.retro-wireframe::after {
+  bottom: -2px;
+  right: -2px;
+  border-left: none;
+  border-top: none;
+}
+
+/* === ENERGY PULSE === */
+.retro-pulse {
+  position: relative;
+}
+
+.retro-pulse::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, var(--neon-cyan-glow) 0%, transparent 70%);
+  transform: translate(-50%, -50%);
+  animation: pulse-energy 2s ease-out infinite;
+  opacity: 0;
+}
+
+@keyframes pulse-energy {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
+  }
+}
+
+/* === MOBILE OPTIMIZATIONS === */
+@media (max-width: 768px) {
+  /* Reduce intensity of effects on mobile for performance */
+  .retro-crt::before,
+  .retro-grain::before {
+    opacity: 0.15;
+  }
+  
+  .retro-hologram::before {
+    opacity: 0.3;
+  }
+  
+  .retro-neon-box::before {
+    opacity: 0.2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Disable animations for users who prefer reduced motion */
+  .retro-crt::before,
+  .retro-glitch,
+  .retro-hologram,
+  .retro-grain::before,
+  .retro-pulse::before,
+  .retro-matrix::before,
+  .retro-neon-text {
+    animation: none;
+  }
+}

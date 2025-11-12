@@ -8,42 +8,69 @@
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     
-    <!-- Polymorphic UI System -->
+    <!-- Retro Futurism UI System -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
-<body>
+<body class="retro-crt retro-grain">
+    <!-- Perspective Grid Background -->
+    <div class="perspective-grid"></div>
+    
     <header>
-        <nav class="navbar navbar-dark">
-            <div class="container-fluid">
-                <a class="navbar__brand" asp-area="" asp-controller="Dashboard" asp-action="Index">
-                    <i class="bi bi-graph-up"></i> SSIS Analytics
+        <nav class="retro-navbar" id="retroNavbar">
+            <div class="retro-navbar__container">
+                <a class="retro-navbar__logo" asp-area="" asp-controller="Dashboard" asp-action="Index">
+                    SSIS Analytics
                 </a>
-                <button class="navbar-toggler d-md-none" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
+                
+                <button class="retro-navbar__toggle" id="navToggle" aria-label="Toggle navigation">
+                    <span class="retro-navbar__toggle-line"></span>
+                    <span class="retro-navbar__toggle-line"></span>
+                    <span class="retro-navbar__toggle-line"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar__nav">
-                        <li class="nav-item">
-                            <a class="navbar__link navbar__link--active" asp-area="" asp-controller="Dashboard" asp-action="Index">
-                                <i class="bi bi-speedometer2"></i> Dashboard
-                            </a>
-                        </li>
-                    </ul>
+                
+                <ul class="retro-navbar__menu" id="navMenu">
+                    <li class="retro-navbar__item">
+                        <a class="retro-navbar__link retro-navbar__link--active" asp-area="" asp-controller="Dashboard" asp-action="Index">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="retro-navbar__item">
+                        <a class="retro-navbar__link" href="#analytics">
+                            <i class="bi bi-graph-up"></i> Analytics
+                        </a>
+                    </li>
+                    <li class="retro-navbar__item">
+                        <a class="retro-navbar__link" href="#monitoring">
+                            <i class="bi bi-activity"></i> Monitoring
+                        </a>
+                    </li>
+                    <li class="retro-navbar__item">
+                        <a class="retro-navbar__link" href="#reports">
+                            <i class="bi bi-file-earmark-text"></i> Reports
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="retro-navbar__actions">
+                    <a href="#settings" class="retro-navbar__btn">
+                        <i class="bi bi-gear"></i> Settings
+                    </a>
                 </div>
             </div>
         </nav>
     </header>
     
-    <div class="container-fluid">
-        <main role="main" class="pb-3">
+    <div class="container-fluid" style="margin-top: calc(var(--navbar-height) + var(--retro-space-4)); padding: var(--retro-space-4);">
+        <main role="main">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="footer text-muted">
-        <div class="container">
-            <span>&copy; 2025 - SSIS Analytics Dashboard - Powered by Polymorphic UI</span>
+    <footer style="background: linear-gradient(180deg, transparent 0%, rgba(10, 14, 39, 0.95) 100%); border-top: var(--retro-border-width) solid var(--neon-cyan); padding: var(--retro-space-4); margin-top: var(--retro-space-8); box-shadow: 0 -4px 30px rgba(0, 245, 255, 0.2);">
+        <div class="container text-center">
+            <span style="font-family: var(--font-retro-mono); color: rgba(0, 245, 255, 0.7); font-size: var(--retro-text-sm);">
+                <i class="bi bi-cpu"></i> &copy; 2025 - SSIS Analytics Dashboard - Powered by Retro Futurism UI <i class="bi bi-lightning-charge"></i>
+            </span>
         </div>
     </footer>
     
@@ -53,7 +80,46 @@
     <!-- SignalR -->
     <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@@latest/dist/browser/signalr.min.js"></script>
     
-    <!-- Polymorphic UI System -->
+    <!-- Retro Navbar JavaScript -->
+    <script>
+        // Mobile menu toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const navToggle = document.getElementById('navToggle');
+            const navMenu = document.getElementById('navMenu');
+            const navbar = document.getElementById('retroNavbar');
+            
+            if (navToggle && navMenu) {
+                navToggle.addEventListener('click', function() {
+                    navToggle.classList.toggle('retro-navbar__toggle--active');
+                    navMenu.classList.toggle('retro-navbar__menu--open');
+                });
+            }
+            
+            // Navbar scroll effect
+            window.addEventListener('scroll', function() {
+                if (navbar) {
+                    if (window.scrollY > 50) {
+                        navbar.classList.add('retro-navbar--scrolled');
+                    } else {
+                        navbar.classList.remove('retro-navbar--scrolled');
+                    }
+                }
+            });
+            
+            // Close mobile menu when clicking on a link
+            const navLinks = document.querySelectorAll('.retro-navbar__link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 768) {
+                        navToggle.classList.remove('retro-navbar__toggle--active');
+                        navMenu.classList.remove('retro-navbar__menu--open');
+                    }
+                });
+            });
+        });
+    </script>
+    
+    <!-- Polymorphic UI System (kept for compatibility) -->
     <script src="~/js/polymorphic-ui.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     

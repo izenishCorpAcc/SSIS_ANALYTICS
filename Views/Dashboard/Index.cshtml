@@ -11,17 +11,12 @@
         z-index: 10;
     }
     
-    .card.loading {
+    .retro-card.loading {
         opacity: 0.7;
     }
     
     #refreshBtn.loading .bi-arrow-clockwise {
-        animation: spin 1s linear infinite;
-    }
-    
-    @@keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
+        animation: retro-spin 1s linear infinite;
     }
     
     .pulse {
@@ -38,48 +33,51 @@
 <div class="container-fluid">
     @if (!string.IsNullOrEmpty(ViewBag.ErrorMessage))
     {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <strong>Error!</strong> @ViewBag.ErrorMessage
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="retro-alert retro-alert--danger" role="alert">
+            <div class="retro-alert__content">
+                <strong>Error!</strong> @ViewBag.ErrorMessage
+            </div>
         </div>
     }
 
-    <!-- Header -->
-        }
-
     @if (TempData["SuccessMessage"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle-fill"></i>
-            <strong>Success!</strong> @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="retro-alert retro-alert--success" role="alert">
+            <div class="retro-alert__content">
+                <i class="bi bi-check-circle-fill"></i>
+                <strong>Success!</strong> @TempData["SuccessMessage"]
+            </div>
         </div>
     }
 
     <!-- Header -->
     <div class="row mb-4 align-items-center">
         <div class="col-md-6">
-            <h1 class="display-4 mb-2">SSIS Analytics Dashboard</h1>
-            <p class="text-muted mb-0">
+            <h1 class="retro-neon-text" style="font-family: var(--font-retro-title); font-size: var(--retro-text-4xl); margin-bottom: var(--retro-space-2);">
+                <i class="bi bi-graph-up-arrow"></i> SSIS ANALYTICS
+            </h1>
+            <p style="font-family: var(--font-retro-mono); color: rgba(0, 245, 255, 0.7); margin-bottom: 0;">
                 <i class="bi bi-server"></i> Monitor your SQL Server Integration Services executions 
-                <span id="autoRefreshStatus" class="badge bg-success ms-2">Auto-refresh: ON</span>
+                <span id="autoRefreshStatus" class="retro-badge retro-badge--green ms-2">
+                    <i class="bi bi-broadcast"></i> Auto-refresh: ON
+                </span>
                 @if (!string.IsNullOrEmpty(ViewBag.SelectedBusinessUnit))
                 {
-                    <span class="badge bg-primary ms-2">
+                    <span class="retro-badge retro-badge--purple ms-2">
                         <i class="bi bi-building"></i> @ViewBag.SelectedBusinessUnit
                     </span>
                 }
             </p>
         </div>
         <div class="col-md-6 text-end">
-            <div class="btn-group" role="group">
-                <button class="btn btn-outline-primary" onclick="manualRefresh()" id="refreshBtn">
+            <div class="d-flex justify-content-end gap-2 flex-wrap">
+                <button class="retro-btn retro-btn--cyan" onclick="manualRefresh()" id="refreshBtn">
                     <i class="bi bi-arrow-clockwise"></i> Refresh
                 </button>
-                <button class="btn btn-outline-success" onclick="exportToCSV()" id="exportBtn">
+                <button class="retro-btn retro-btn--green" onclick="exportToCSV()" id="exportBtn">
                     <i class="bi bi-download"></i> Export Data
                 </button>
-                <a href="@Url.Action("Index", "ServerConfig")" class="btn btn-outline-secondary">
+                <a href="@Url.Action("Index", "ServerConfig")" class="retro-btn retro-btn--purple">
                     <i class="bi bi-gear"></i> Settings
                 </a>
             </div>
@@ -89,21 +87,19 @@
     <!-- Advanced Filters -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="bi bi-funnel"></i> Filters
-                        <button class="btn btn-sm btn-link float-end" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
-                            <i class="bi bi-chevron-down"></i>
-                        </button>
-                    </h5>
+            <div class="retro-card retro-card--cut">
+                <div class="retro-card__header">
+                    <i class="bi bi-funnel-fill"></i> FILTERS
+                    <button class="retro-btn retro-btn--sm float-end" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" style="background: transparent; border: none; color: var(--neon-cyan);">
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
                 </div>
                 <div class="collapse show" id="filterCollapse">
-                    <div class="card-body">
+                    <div class="retro-card__body">
                         <div class="row g-3">
                             <div class="col-md-2">
-                                <label class="form-label">Business Unit</label>
-                                <select class="form-select" id="businessUnitFilter">
+                                <label style="font-family: var(--font-retro-display); color: var(--neon-cyan); font-size: var(--retro-text-sm); text-transform: uppercase; margin-bottom: 8px; display: block;">Business Unit</label>
+                                <select class="retro-input" id="businessUnitFilter" style="padding: 8px;">
                                     <option value="">All Units</option>
                                     <option value="CLIENTREPO">ClientRepo (CR_)</option>
                                     <option value="CHARTNAV">ChartNav (CN_)</option>
@@ -113,8 +109,8 @@
                                 </select>
                             </div>
                             <div class="col-md-2">
-                                <label class="form-label">Date Range</label>
-                                <select class="form-select" id="dateRangeFilter">
+                                <label style="font-family: var(--font-retro-display); color: var(--neon-cyan); font-size: var(--retro-text-sm); text-transform: uppercase; margin-bottom: 8px; display: block;">Date Range</label>
+                                <select class="retro-input" id="dateRangeFilter" style="padding: 8px;">
                                     <option value="30" selected>Last 30 Days</option>
                                     <option value="7">Last 7 Days</option>
                                     <option value="1">Today</option>
@@ -122,8 +118,8 @@
                                 </select>
                             </div>
                             <div class="col-md-2">
-                                <label class="form-label">Status Filter</label>
-                                <select class="form-select" id="statusFilter">
+                                <label style="font-family: var(--font-retro-display); color: var(--neon-cyan); font-size: var(--retro-text-sm); text-transform: uppercase; margin-bottom: 8px; display: block;">Status Filter</label>
+                                <select class="retro-input" id="statusFilter" style="padding: 8px;">
                                     <option value="">All Statuses</option>
                                     <option value="Succeeded">Succeeded</option>
                                     <option value="Failed">Failed</option>
@@ -132,15 +128,15 @@
                                 </select>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">Search Packages</label>
-                                <input type="text" class="form-control" id="packageSearch" placeholder="Search by package name...">
+                                <label style="font-family: var(--font-retro-display); color: var(--neon-cyan); font-size: var(--retro-text-sm); text-transform: uppercase; margin-bottom: 8px; display: block;">Search Packages</label>
+                                <input type="text" class="retro-input" id="packageSearch" placeholder="Search by package name...">
                             </div>
                             <div class="col-md-2 d-flex align-items-end">
-                                <div class="btn-group w-100" role="group">
-                                    <button class="btn btn-primary" onclick="applyFilters()">
+                                <div class="d-flex gap-2 w-100">
+                                    <button class="retro-btn retro-btn--sm flex-fill" onclick="applyFilters()">
                                         <i class="bi bi-check2-circle"></i> Apply
                                     </button>
-                                    <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                                    <button class="retro-btn retro-btn--sm retro-btn--pink flex-fill" onclick="clearFilters()">
                                         <i class="bi bi-x-circle"></i> Clear
                                     </button>
                                 </div>
@@ -155,18 +151,16 @@
     <!-- Currently Running Packages -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card border-info">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-play-circle"></i> Currently Running Packages
-                        <span class="badge bg-light text-dark ms-2" id="currentExecutionCount">@Model.CurrentExecutions.Count</span>
-                    </h5>
+            <div class="retro-card retro-card--cyan retro-card--cut">
+                <div class="retro-card__header" style="color: var(--neon-cyan);">
+                    <i class="bi bi-play-circle-fill"></i> CURRENTLY RUNNING PACKAGES
+                    <span class="retro-badge retro-badge--cyan ms-2" id="currentExecutionCount">@Model.CurrentExecutions.Count</span>
                 </div>
-                <div class="card-body">
+                <div class="retro-card__body">
                     @if (Model.CurrentExecutions != null && Model.CurrentExecutions.Any())
                     {
                         <div class="table-responsive">
-                            <table class="table table-hover mb-0" id="currentExecutionsTable">
+                            <table class="retro-table" id="currentExecutionsTable">
                                 <thead>
                                     <tr>
                                         <th>Execution ID</th>
@@ -182,14 +176,14 @@
                                     @foreach (var exec in Model.CurrentExecutions)
                                     {
                                         <tr>
-                                            <td><strong>@exec.ExecutionId</strong></td>
+                                            <td><strong style="color: var(--neon-cyan);">@exec.ExecutionId</strong></td>
                                             <td>@exec.PackageName</td>
-                                            <td><span class="badge bg-primary">@exec.StatusDescription</span></td>
+                                            <td><span class="retro-badge retro-badge--purple">@exec.StatusDescription</span></td>
                                             <td>@exec.StartTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
                                             <td>
                                                 @{
                                                     var duration = TimeSpan.FromSeconds(exec.DurationSeconds);
-                                                    <span class="@(exec.IsLongRunning ? "text-danger fw-bold" : "")">
+                                                    <span class="@(exec.IsLongRunning ? "retro-neon-text retro-neon-text--pink" : "")" style="font-weight: @(exec.IsLongRunning ? "bold" : "normal");">
                                                         @string.Format("{0:D2}:{1:D2}:{2:D2}", duration.Hours, duration.Minutes, duration.Seconds)
                                                     </span>
                                                 }
@@ -198,8 +192,8 @@
                                             <td>
                                                 @if (exec.IsLongRunning)
                                                 {
-                                                    <span class="badge bg-warning" title="Running longer than 30 minutes">
-                                                        <i class="bi bi-exclamation-triangle"></i> Long Running
+                                                    <span class="retro-badge retro-badge--orange" title="Running longer than 30 minutes">
+                                                        <i class="bi bi-exclamation-triangle-fill"></i> Long Running
                                                     </span>
                                                 }
                                             </td>
@@ -211,8 +205,10 @@
                     }
                     else
                     {
-                        <div class="alert alert-info mb-0">
-                            <i class="bi bi-info-circle"></i> No packages currently executing
+                        <div class="retro-alert retro-alert--success">
+                            <div class="retro-alert__content">
+                                <i class="bi bi-info-circle-fill"></i> No packages currently executing
+                            </div>
                         </div>
                     }
                 </div>
@@ -223,16 +219,16 @@
     <!-- Package Performance Stats -->
     <div class="row g-4 mb-4">
         <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5><i class="bi bi-speedometer2"></i> Package Performance (Last 30 Days)</h5>
+            <div class="retro-card retro-card--purple retro-card--cut">
+                <div class="retro-card__header" style="color: var(--neon-purple);">
+                    <i class="bi bi-speedometer2"></i> PACKAGE PERFORMANCE (Last 30 Days)
                 </div>
-                <div class="card-body">
+                <div class="retro-card__body">
                     @if (Model.PackagePerformanceStats != null && Model.PackagePerformanceStats.Any())
                     {
                         <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                            <table class="table table-sm table-hover">
-                                <thead class="table-light sticky-top">
+                            <table class="retro-table">
+                                <thead class="sticky-top">
                                     <tr>
                                         <th>Package</th>
                                         <th>Executions</th>
@@ -246,15 +242,16 @@
                                     {
                                         <tr>
                                             <td class="text-truncate" style="max-width: 200px;" title="@perf.PackageName">@perf.PackageName</td>
-                                            <td><span class="badge bg-secondary">@perf.TotalExecutions</span></td>
+                                            <td><span class="retro-badge retro-badge--cyan">@perf.TotalExecutions</span></td>
                                             <td>
-                                                <div class="progress" style="height: 20px;">
-                                                    <div class="progress-bar @(perf.SuccessRate >= 90 ? "bg-success" : perf.SuccessRate >= 70 ? "bg-warning" : "bg-danger")" 
-                                                         role="progressbar" 
-                                                         style="width: @perf.SuccessRate%">
-                                                        @perf.SuccessRate%
+                                                <div class="retro-progress">
+                                                    <div class="retro-progress__bar" 
+                                                         style="width: @perf.SuccessRate%; background: linear-gradient(90deg, @(perf.SuccessRate >= 90 ? "var(--neon-green)" : perf.SuccessRate >= 70 ? "var(--neon-orange)" : "var(--neon-pink)") 0%, @(perf.SuccessRate >= 90 ? "var(--neon-green-bright)" : perf.SuccessRate >= 70 ? "var(--neon-orange-bright)" : "var(--neon-pink-bright)") 50%, @(perf.SuccessRate >= 90 ? "var(--neon-green)" : perf.SuccessRate >= 70 ? "var(--neon-orange)" : "var(--neon-pink)") 100%);">
                                                     </div>
                                                 </div>
+                                                <span style="font-size: var(--retro-text-sm); color: @(perf.SuccessRate >= 90 ? "var(--neon-green)" : perf.SuccessRate >= 70 ? "var(--neon-orange)" : "var(--neon-pink)");">
+                                                    @perf.SuccessRate%
+                                                </span>
                                             </td>
                                             <td>
                                                 @{
@@ -263,7 +260,7 @@
                                                 }
                                             </td>
                                             <td>
-                                                <span class="badge bg-@(perf.LastExecutionStatus == "Success" ? "success" : "danger")">
+                                                <span class="retro-badge retro-badge--@(perf.LastExecutionStatus == "Success" ? "green" : "pink")">
                                                     @perf.LastExecutionStatus
                                                 </span>
                                             </td>
@@ -275,23 +272,23 @@
                     }
                     else
                     {
-                        <p class="text-muted mb-0">No performance data available</p>
+                        <p style="color: rgba(0, 245, 255, 0.6); margin-bottom: 0;">No performance data available</p>
                     }
                 </div>
             </div>
         </div>
 
         <div class="col-md-6">
-            <div class="card border-danger">
-                <div class="card-header bg-danger text-white">
-                    <h5 class="mb-0"><i class="bi bi-bug"></i> Top Failure Patterns (Last 30 Days)</h5>
+            <div class="retro-card retro-card--pink retro-card--cut">
+                <div class="retro-card__header" style="color: var(--neon-pink);">
+                    <i class="bi bi-bug-fill"></i> TOP FAILURE PATTERNS (Last 30 Days)
                 </div>
-                <div class="card-body">
+                <div class="retro-card__body">
                     @if (Model.FailurePatterns != null && Model.FailurePatterns.Any())
                     {
                         <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                            <table class="table table-sm">
-                                <thead class="table-light sticky-top">
+                            <table class="retro-table">
+                                <thead class="sticky-top">
                                     <tr>
                                         <th>Package</th>
                                         <th>Failures</th>
@@ -304,20 +301,20 @@
                                     {
                                         <tr>
                                             <td class="text-truncate" style="max-width: 200px;" title="@pattern.PackageName">
-                                                <strong>@pattern.PackageName</strong>
+                                                <strong style="color: var(--neon-pink);">@pattern.PackageName</strong>
                                             </td>
-                                            <td><span class="badge bg-danger">@pattern.FailureCount</span></td>
+                                            <td><span class="retro-badge retro-badge--pink">@pattern.FailureCount</span></td>
                                             <td>
-                                                <span class="text-danger fw-bold">@pattern.FailureRate%</span>
+                                                <span class="retro-neon-text retro-neon-text--pink" style="font-weight: bold;">@pattern.FailureRate%</span>
                                             </td>
                                             <td>
                                                 <small>@(pattern.LastFailureTime?.ToString("yyyy-MM-dd HH:mm") ?? "N/A")</small>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td colspan="4" class="bg-light">
-                                                <small class="text-muted text-truncate d-block" style="max-width: 100%;" title="@pattern.MostCommonError">
-                                                    <i class="bi bi-exclamation-circle"></i> @pattern.MostCommonError
+                                            <td colspan="4" style="background: rgba(255, 0, 110, 0.05); padding: var(--retro-space-1);">
+                                                <small class="text-truncate d-block" style="max-width: 100%; color: rgba(255, 0, 110, 0.8);" title="@pattern.MostCommonError">
+                                                    <i class="bi bi-exclamation-circle-fill"></i> @pattern.MostCommonError
                                                 </small>
                                             </td>
                                         </tr>
@@ -328,8 +325,10 @@
                     }
                     else
                     {
-                        <div class="alert alert-success mb-0">
-                            <i class="bi bi-check-circle"></i> No failures detected in the last 30 days!
+                        <div class="retro-alert retro-alert--success">
+                            <div class="retro-alert__content">
+                                <i class="bi bi-check-circle-fill"></i> No failures detected in the last 30 days!
+                            </div>
                         </div>
                     }
                 </div>
@@ -340,24 +339,24 @@
     <!-- Execution Timeline -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5><i class="bi bi-clock-history"></i> Execution Timeline (Last 24 Hours)</h5>
+            <div class="retro-card retro-card--green retro-card--cut">
+                <div class="retro-card__header" style="color: var(--neon-green);">
+                    <i class="bi bi-clock-history"></i> EXECUTION TIMELINE (Last 24 Hours)
                 </div>
-                <div class="card-body">
+                <div class="retro-card__body">
                     @if (Model.ExecutionTimeline != null && Model.ExecutionTimeline.Any())
                     {
                         <div class="timeline" style="max-height: 500px; overflow-y: auto;">
                             @foreach (var item in Model.ExecutionTimeline)
                             {
-                                <div class="timeline-item border-start border-3 border-@item.StatusColor ps-3 pb-3 mb-3">
+                                <div class="timeline-item ps-3 pb-3 mb-3" style="border-left: 3px solid @(item.StatusColor == "success" ? "var(--neon-green)" : item.StatusColor == "danger" ? "var(--neon-pink)" : "var(--neon-cyan)");">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div>
                                             <h6 class="mb-1">
-                                                <span class="badge bg-@item.StatusColor">@item.Status</span>
-                                                <strong>@item.PackageName</strong>
+                                                <span class="retro-badge retro-badge--@(item.StatusColor == "success" ? "green" : item.StatusColor == "danger" ? "pink" : "cyan")">@item.Status</span>
+                                                <strong style="color: var(--neon-cyan); margin-left: 8px;">@item.PackageName</strong>
                                             </h6>
-                                            <p class="mb-1 text-muted">
+                                            <p class="mb-1" style="color: rgba(0, 245, 255, 0.6);">
                                                 <small>
                                                     <i class="bi bi-clock"></i> Started: @item.StartTime.ToString("yyyy-MM-dd HH:mm:ss")
                                                     @if (item.EndTime.HasValue)
@@ -367,8 +366,8 @@
                                                 </small>
                                             </p>
                                             <p class="mb-0">
-                                                <span class="badge bg-secondary">Duration: @item.DurationMinutes min</span>
-                                                <span class="badge bg-light text-dark">ID: @item.ExecutionId</span>
+                                                <span class="retro-badge retro-badge--cyan">Duration: @item.DurationMinutes min</span>
+                                                <span class="retro-badge retro-badge--purple ms-2">ID: @item.ExecutionId</span>
                                             </p>
                                         </div>
                                     </div>
@@ -378,7 +377,7 @@
                     }
                     else
                     {
-                        <p class="text-muted mb-0">No executions in the last 24 hours</p>
+                        <p style="color: rgba(0, 245, 255, 0.6); margin-bottom: 0;">No executions in the last 24 hours</p>
                     }
                 </div>
             </div>
@@ -386,54 +385,45 @@
     </div>
 
     <!-- Metrics Cards -->
-    <!-- Metrics Cards -->
     <div class="row g-4 mb-4" id="metricsCards">
         <div class="col-md-3">
-            <div class="card border-primary position-relative">
-                <div class="card-body">
-                    <div class="spinner-overlay d-none">
-                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-                    </div>
-                    <h6 class="card-subtitle mb-2 text-muted">Total Executions</h6>
-                    <h2 class="card-title display-4">@Model.Metrics.TotalExecutions</h2>
-                    <p class="card-text text-muted">Last 30 days</p>
+            <div class="retro-card retro-neon-box" style="border-color: var(--neon-cyan); position: relative;">
+                <div class="spinner-overlay d-none">
+                    <div class="retro-spinner" style="width: 30px; height: 30px; border-width: 3px;"></div>
                 </div>
+                <h6 style="font-family: var(--font-retro-display); color: rgba(0, 245, 255, 0.7); font-size: var(--retro-text-sm); text-transform: uppercase; margin-bottom: var(--retro-space-1);">Total Executions</h6>
+                <h2 class="retro-neon-text" style="font-size: var(--retro-text-4xl); margin: var(--retro-space-2) 0;">@Model.Metrics.TotalExecutions</h2>
+                <p style="color: rgba(0, 245, 255, 0.5); margin: 0;">Last 30 days</p>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card border-success position-relative">
-                <div class="card-body">
-                    <div class="spinner-overlay d-none">
-                        <div class="spinner-border spinner-border-sm text-success" role="status"></div>
-                    </div>
-                    <h6 class="card-subtitle mb-2 text-muted">Successful</h6>
-                    <h2 class="card-title display-4 text-success">@Model.Metrics.SuccessfulExecutions</h2>
-                    <p class="card-text text-muted">@Model.Metrics.SuccessRate% success rate</p>
+            <div class="retro-card retro-neon-box" style="border-color: var(--neon-green); position: relative;">
+                <div class="spinner-overlay d-none">
+                    <div class="retro-spinner" style="width: 30px; height: 30px; border-width: 3px; border-top-color: var(--neon-green);"></div>
                 </div>
+                <h6 style="font-family: var(--font-retro-display); color: rgba(57, 255, 20, 0.7); font-size: var(--retro-text-sm); text-transform: uppercase; margin-bottom: var(--retro-space-1);">Successful</h6>
+                <h2 class="retro-neon-text retro-neon-text--green" style="font-size: var(--retro-text-4xl); margin: var(--retro-space-2) 0;">@Model.Metrics.SuccessfulExecutions</h2>
+                <p style="color: rgba(57, 255, 20, 0.5); margin: 0;">@Model.Metrics.SuccessRate% success rate</p>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card border-danger position-relative">
-                <div class="card-body">
-                    <div class="spinner-overlay d-none">
-                        <div class="spinner-border spinner-border-sm text-danger" role="status"></div>
-                    </div>
-                    <h6 class="card-subtitle mb-2 text-muted">Failed</h6>
-                    <h2 class="card-title display-4 text-danger">@Model.Metrics.FailedExecutions</h2>
-                    <p class="card-text text-muted">Requires attention</p>
+            <div class="retro-card retro-neon-box" style="border-color: var(--neon-pink); position: relative;">
+                <div class="spinner-overlay d-none">
+                    <div class="retro-spinner" style="width: 30px; height: 30px; border-width: 3px; border-top-color: var(--neon-pink);"></div>
                 </div>
+                <h6 style="font-family: var(--font-retro-display); color: rgba(255, 0, 110, 0.7); font-size: var(--retro-text-sm); text-transform: uppercase; margin-bottom: var(--retro-space-1);">Failed</h6>
+                <h2 class="retro-neon-text retro-neon-text--pink" style="font-size: var(--retro-text-4xl); margin: var(--retro-space-2) 0;">@Model.Metrics.FailedExecutions</h2>
+                <p style="color: rgba(255, 0, 110, 0.5); margin: 0;">Requires attention</p>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card border-warning position-relative">
-                <div class="card-body">
-                    <div class="spinner-overlay d-none">
-                        <div class="spinner-border spinner-border-sm text-warning" role="status"></div>
-                    </div>
-                    <h6 class="card-subtitle mb-2 text-muted">Avg Duration</h6>
-                    <h2 class="card-title display-4 text-warning">@Model.Metrics.AvgDuration s</h2>
-                    <p class="card-text text-muted">Average execution time</p>
+            <div class="retro-card retro-neon-box" style="border-color: var(--neon-purple); position: relative;">
+                <div class="spinner-overlay d-none">
+                    <div class="retro-spinner" style="width: 30px; height: 30px; border-width: 3px; border-top-color: var(--neon-purple);"></div>
                 </div>
+                <h6 style="font-family: var(--font-retro-display); color: rgba(157, 78, 221, 0.7); font-size: var(--retro-text-sm); text-transform: uppercase; margin-bottom: var(--retro-space-1);">Avg Duration</h6>
+                <h2 class="retro-neon-text retro-neon-text--purple" style="font-size: var(--retro-text-4xl); margin: var(--retro-space-2) 0;">@Model.Metrics.AvgDuration s</h2>
+                <p style="color: rgba(157, 78, 221, 0.5); margin: 0;">Average execution time</p>
             </div>
         </div>
     </div>
@@ -441,21 +431,21 @@
     <!-- Charts Row -->
     <div class="row g-4 mb-4">
         <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Success Rate Distribution</h5>
+            <div class="retro-card retro-card--cut">
+                <div class="retro-card__header">
+                    <i class="bi bi-pie-chart-fill"></i> SUCCESS RATE DISTRIBUTION
                 </div>
-                <div class="card-body">
+                <div class="retro-card__body">
                     <canvas id="successRateChart" height="200"></canvas>
                 </div>
             </div>
         </div>
         <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Execution Trends (Last 30 Days)</h5>
+            <div class="retro-card retro-card--cut">
+                <div class="retro-card__header">
+                    <i class="bi bi-graph-up"></i> EXECUTION TRENDS (Last 30 Days)
                 </div>
-                <div class="card-body">
+                <div class="retro-card__body">
                     <canvas id="trendsChart" height="200"></canvas>
                 </div>
             </div>
@@ -465,16 +455,16 @@
     <!-- Recent Executions -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card position-relative" id="recentExecutionsCard">
-                <div class="card-header">
-                    <h5>Recent Executions</h5>
+            <div class="retro-card retro-card--cut position-relative" id="recentExecutionsCard">
+                <div class="retro-card__header">
+                    <i class="bi bi-list-ul"></i> RECENT EXECUTIONS
                 </div>
                 <div class="spinner-overlay d-none">
-                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    <div class="retro-spinner"></div>
                 </div>
-                <div class="card-body">
+                <div class="retro-card__body">
                     <div class="table-responsive">
-                        <table class="table table-hover" id="recentExecutionsTable">
+                        <table class="retro-table" id="recentExecutionsTable">
                             <thead>
                                 <tr>
                                     <th>Execution ID</th>
@@ -491,17 +481,17 @@
                                     @foreach (var execution in Model.RecentExecutions)
                                     {
                                         <tr>
-                                            <td>@execution.ExecutionId</td>
+                                            <td><strong style="color: var(--neon-cyan);">@execution.ExecutionId</strong></td>
                                             <td>@execution.PackageName</td>
                                             <td>@execution.ProjectName</td>
                                             <td>
                                                 @if (execution.Status == "Succeeded")
                                                 {
-                                                    <span class="badge bg-success">@execution.Status</span>
+                                                    <span class="retro-badge retro-badge--green">@execution.Status</span>
                                                 }
                                                 else if (execution.Status == "Failed")
                                                 {
-                                                    <span class="badge bg-danger">@execution.Status</span>
+                                                    <span class="retro-badge retro-badge--pink">@execution.Status</span>
                                                 }
                                                 else if (execution.Status == "Running")
                                                 {
