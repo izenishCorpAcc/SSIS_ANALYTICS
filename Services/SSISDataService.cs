@@ -57,9 +57,10 @@ namespace SSISAnalyticsDashboard.Services
 
                 if (await reader.ReadAsync())
                 {
-                    var totalExecutions = reader.GetInt32(0);
-                    var failedExecutions = reader.GetInt32(1);
-                    var successfulExecutions = reader.GetInt32(2);
+                    // Use Convert.ToInt32 for aggregate functions which may return different types
+                    var totalExecutions = Convert.ToInt32(reader.GetValue(0));
+                    var failedExecutions = Convert.ToInt32(reader.GetValue(1));
+                    var successfulExecutions = Convert.ToInt32(reader.GetValue(2));
                     var avgDuration = reader.IsDBNull(3) ? 0 : Convert.ToInt32(reader.GetValue(3));
 
                     var successRate = totalExecutions > 0 
@@ -116,8 +117,8 @@ namespace SSISAnalyticsDashboard.Services
                     trends.Add(new ExecutionTrend
                     {
                         Date = reader.GetDateTime(0).ToString("yyyy-MM-dd"),
-                        Success = reader.GetInt32(1),
-                        Failed = reader.GetInt32(2),
+                        Success = Convert.ToInt32(reader.GetValue(1)),
+                        Failed = Convert.ToInt32(reader.GetValue(2)),
                         AvgDuration = reader.IsDBNull(3) ? 0 : Convert.ToInt32(reader.GetValue(3))
                     });
                 }
@@ -414,15 +415,15 @@ namespace SSISAnalyticsDashboard.Services
                     packagePerformance.Add(new PackagePerformance
                     {
                         PackageName = reader.GetString(0),
-                        TotalExecutions = reader.GetInt32(1),
-                        SuccessfulExecutions = reader.GetInt32(2),
-                        FailedExecutions = reader.GetInt32(3),
+                        TotalExecutions = Convert.ToInt32(reader.GetValue(1)),
+                        SuccessfulExecutions = Convert.ToInt32(reader.GetValue(2)),
+                        FailedExecutions = Convert.ToInt32(reader.GetValue(3)),
                         SuccessRate = reader.GetDecimal(4),
                         AvgDurationSeconds = reader.IsDBNull(5) ? 0 : Convert.ToInt32(reader.GetValue(5)),
                         MinDurationSeconds = reader.IsDBNull(6) ? 0 : Convert.ToInt32(reader.GetValue(6)),
                         MaxDurationSeconds = reader.IsDBNull(7) ? 0 : Convert.ToInt32(reader.GetValue(7)),
                         LastExecutionTime = reader.IsDBNull(8) ? null : reader.GetDateTime(8),
-                        LastExecutionStatus = reader.GetInt32(9) == 7 ? "Success" : "Failed"
+                        LastExecutionStatus = Convert.ToInt32(reader.GetValue(9)) == 7 ? "Success" : "Failed"
                     });
                 }
 
@@ -476,7 +477,7 @@ namespace SSISAnalyticsDashboard.Services
                     failurePatterns.Add(new FailurePattern
                     {
                         PackageName = reader.GetString(0),
-                        FailureCount = reader.GetInt32(1),
+                        FailureCount = Convert.ToInt32(reader.GetValue(1)),
                         MostCommonError = reader.IsDBNull(2) ? "N/A" : reader.GetString(2),
                         LastFailureTime = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
                         FailureRate = reader.GetDecimal(4)
