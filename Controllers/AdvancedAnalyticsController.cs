@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using SSIS_ANALYTICS.Services;
+using SSISAnalyticsDashboard.Services;
 using System.Diagnostics;
 
-namespace SSIS_ANALYTICS.Controllers
+namespace SSISAnalyticsDashboard.Controllers
 {
     public class AdvancedAnalyticsController : Controller
     {
