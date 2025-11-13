@@ -779,7 +779,6 @@ namespace SSISAnalyticsDashboard.Services
                 var query = @"
                     WITH ErrorData AS (
                         SELECT 
-                            e.execution_id,
                             ex.package_name,
                             e.message,
                             e.event_name,
