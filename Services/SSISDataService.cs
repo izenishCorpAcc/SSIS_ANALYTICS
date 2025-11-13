@@ -654,8 +654,8 @@ namespace SSISAnalyticsDashboard.Services
                         TotalExecutions = Convert.ToInt32(reader.GetValue(1)),
                         SuccessfulExecutions = Convert.ToInt32(reader.GetValue(2)),
                         FailedExecutions = Convert.ToInt32(reader.GetValue(3)),
-                        SuccessRate = reader.GetDecimal(4),
-                        ReliabilityScore = reader.GetDecimal(5),
+                        SuccessRate = Convert.ToDecimal(reader.GetValue(4)),
+                        ReliabilityScore = Convert.ToDecimal(reader.GetValue(5)),
                         Trend = reader.GetString(6)
                     });
                 }
@@ -741,8 +741,8 @@ namespace SSISAnalyticsDashboard.Services
                     results.Add(new MTBFAnalysis
                     {
                         PackageName = reader.GetString(0),
-                        MeanTimeBetweenFailures = reader.GetDecimal(1),
-                        AvailabilityPercentage = reader.GetDecimal(2),
+                        MeanTimeBetweenFailures = Convert.ToDecimal(reader.GetValue(1)),
+                        AvailabilityPercentage = Convert.ToDecimal(reader.GetValue(2)),
                         FailureCount = Convert.ToInt32(reader.GetValue(3)),
                         LastFailure = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
                         Status = reader.GetString(5)
@@ -912,11 +912,11 @@ namespace SSISAnalyticsDashboard.Services
                     results.Add(new SLACompliance
                     {
                         PackageName = reader.GetString(0),
-                        SLAThresholdMinutes = reader.GetDecimal(1),
-                        AvgExecutionMinutes = reader.GetDecimal(2),
+                        SLAThresholdMinutes = Convert.ToDecimal(reader.GetValue(1)),
+                        AvgExecutionMinutes = Convert.ToDecimal(reader.GetValue(2)),
                         TotalExecutions = Convert.ToInt32(reader.GetValue(3)),
                         CompiantExecutions = Convert.ToInt32(reader.GetValue(4)),
-                        CompliancePercentage = reader.GetDecimal(5),
+                        CompliancePercentage = Convert.ToDecimal(reader.GetValue(5)),
                         ComplianceStatus = reader.GetString(6)
                     });
                 }
@@ -992,9 +992,9 @@ namespace SSISAnalyticsDashboard.Services
                     {
                         Date = reader.GetDateTime(0),
                         PackageName = reader.GetString(1),
-                        AvgExecutionMinutes = reader.GetDecimal(2),
-                        MinExecutionMinutes = reader.GetDecimal(3),
-                        MaxExecutionMinutes = reader.GetDecimal(4),
+                        AvgExecutionMinutes = Convert.ToDecimal(reader.GetValue(2)),
+                        MinExecutionMinutes = Convert.ToDecimal(reader.GetValue(3)),
+                        MaxExecutionMinutes = Convert.ToDecimal(reader.GetValue(4)),
                         ExecutionCount = Convert.ToInt32(reader.GetValue(5)),
                         Trend = reader.GetString(6)
                     });
@@ -1051,7 +1051,7 @@ namespace SSISAnalyticsDashboard.Services
                         HourOfDay = Convert.ToInt32(reader.GetValue(0)),
                         DayOfWeek = Convert.ToInt32(reader.GetValue(1)),
                         ExecutionCount = Convert.ToInt32(reader.GetValue(2)),
-                        AvgDurationMinutes = reader.GetDecimal(3),
+                        AvgDurationMinutes = Convert.ToDecimal(reader.GetValue(3)),
                         FailureCount = Convert.ToInt32(reader.GetValue(4))
                     });
                 }
@@ -1120,8 +1120,8 @@ namespace SSISAnalyticsDashboard.Services
                         Package1 = reader.GetString(0),
                         Package2 = reader.GetString(1),
                         CoExecutionCount = Convert.ToInt32(reader.GetValue(2)),
-                        CorrelationScore = reader.GetDecimal(3),
-                        AvgTimeDifferenceMinutes = reader.GetDecimal(4)
+                        CorrelationScore = Convert.ToDecimal(reader.GetValue(3)),
+                        AvgTimeDifferenceMinutes = Convert.ToDecimal(reader.GetValue(4))
                     });
                 }
 
@@ -1187,8 +1187,8 @@ namespace SSISAnalyticsDashboard.Services
                     {
                         TimeSlot = reader.GetDateTime(0),
                         ConcurrentExecutions = Convert.ToInt32(reader.GetValue(1)),
-                        TotalCPUTime = reader.GetDecimal(2),
-                        PeakMemoryMB = reader.GetDecimal(3),
+                        TotalCPUTime = Convert.ToDecimal(reader.GetValue(2)),
+                        PeakMemoryMB = Convert.ToDecimal(reader.GetValue(3)),
                         UtilizationLevel = reader.GetString(4)
                     });
                 }
