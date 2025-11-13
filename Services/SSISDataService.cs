@@ -189,7 +189,7 @@ namespace SSISAnalyticsDashboard.Services
                         ExecutionId = reader.GetInt64(0),
                         PackageName = reader.GetString(1),
                         ErrorTime = reader.GetDateTimeOffset(2).DateTime,
-                        ErrorCode = reader.GetInt32(3),
+                        ErrorCode = Convert.ToInt32(reader.GetValue(3)),  // event_message_id is bigint
                         ErrorDescription = reader.GetString(4)
                     });
                 }
