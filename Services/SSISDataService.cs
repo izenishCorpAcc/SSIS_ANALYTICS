@@ -136,7 +136,7 @@ namespace SSISAnalyticsDashboard.Services
                 {
                     trends.Add(new ExecutionTrend
                     {
-                        Date = reader.GetDateTime(0).ToString("yyyy-MM-dd"),
+                        Date = Convert.ToDateTime(reader.GetValue(0)).ToString("yyyy-MM-dd"),
                         Success = Convert.ToInt32(reader.GetValue(1)),
                         Failed = Convert.ToInt32(reader.GetValue(2)),
                         AvgDuration = reader.IsDBNull(3) ? 0 : Convert.ToInt32(reader.GetValue(3))
@@ -377,7 +377,7 @@ namespace SSISAnalyticsDashboard.Services
                     {
                         ExecutionId = reader.GetInt64(0),
                         PackageName = reader.GetString(1),
-                        StartTime = reader.GetDateTime(2),
+                        StartTime = reader.GetDateTimeOffset(2).DateTime,
                         DurationSeconds = durationSeconds,
                         Status = reader.GetInt32(4).ToString(),
                         StatusDescription = reader.GetString(5),
@@ -438,11 +438,11 @@ namespace SSISAnalyticsDashboard.Services
                         TotalExecutions = Convert.ToInt32(reader.GetValue(1)),
                         SuccessfulExecutions = Convert.ToInt32(reader.GetValue(2)),
                         FailedExecutions = Convert.ToInt32(reader.GetValue(3)),
-                        SuccessRate = reader.GetDecimal(4),
+                        SuccessRate = Convert.ToDecimal(reader.GetValue(4)),
                         AvgDurationSeconds = reader.IsDBNull(5) ? 0 : Convert.ToInt32(reader.GetValue(5)),
                         MinDurationSeconds = reader.IsDBNull(6) ? 0 : Convert.ToInt32(reader.GetValue(6)),
                         MaxDurationSeconds = reader.IsDBNull(7) ? 0 : Convert.ToInt32(reader.GetValue(7)),
-                        LastExecutionTime = reader.IsDBNull(8) ? null : reader.GetDateTime(8),
+                        LastExecutionTime = reader.IsDBNull(8) ? null : reader.GetDateTimeOffset(8).DateTime,
                         LastExecutionStatus = Convert.ToInt32(reader.GetValue(9)) == 7 ? "Success" : "Failed"
                     });
                 }
@@ -499,8 +499,8 @@ namespace SSISAnalyticsDashboard.Services
                         PackageName = reader.GetString(0),
                         FailureCount = Convert.ToInt32(reader.GetValue(1)),
                         MostCommonError = reader.IsDBNull(2) ? "N/A" : reader.GetString(2),
-                        LastFailureTime = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
-                        FailureRate = reader.GetDecimal(4)
+                        LastFailureTime = reader.IsDBNull(3) ? null : reader.GetDateTimeOffset(3).DateTime,
+                        FailureRate = Convert.ToDecimal(reader.GetValue(4))
                     });
                 }
 
@@ -569,8 +569,8 @@ namespace SSISAnalyticsDashboard.Services
                     {
                         ExecutionId = reader.GetInt64(0),
                         PackageName = reader.GetString(1),
-                        StartTime = reader.GetDateTime(2),
-                        EndTime = reader.IsDBNull(3) ? null : reader.GetDateTime(3),
+                        StartTime = reader.GetDateTimeOffset(2).DateTime,
+                        EndTime = reader.IsDBNull(3) ? null : reader.GetDateTimeOffset(3).DateTime,
                         DurationMinutes = Convert.ToInt32(reader.GetValue(4)),
                         Status = statusText,
                         StatusColor = reader.GetString(6)
@@ -744,7 +744,7 @@ namespace SSISAnalyticsDashboard.Services
                         MeanTimeBetweenFailures = Convert.ToDecimal(reader.GetValue(1)),
                         AvailabilityPercentage = Convert.ToDecimal(reader.GetValue(2)),
                         FailureCount = Convert.ToInt32(reader.GetValue(3)),
-                        LastFailure = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
+                        LastFailure = reader.IsDBNull(4) ? null : reader.GetDateTimeOffset(4).DateTime,
                         Status = reader.GetString(5)
                     });
                 }
@@ -826,8 +826,8 @@ namespace SSISAnalyticsDashboard.Services
                         ErrorCategory = reader.GetString(0),
                         ErrorMessage = reader.GetString(1),
                         Frequency = Convert.ToInt32(reader.GetValue(2)),
-                        FirstOccurrence = reader.GetDateTime(3),
-                        LastOccurrence = reader.GetDateTime(4),
+                        FirstOccurrence = reader.GetDateTimeOffset(3).DateTime,
+                        LastOccurrence = reader.GetDateTimeOffset(4).DateTime,
                         Severity = reader.GetString(5),
                         AffectedPackages = new List<string>()
                     });
@@ -990,7 +990,7 @@ namespace SSISAnalyticsDashboard.Services
                 {
                     results.Add(new PerformanceTrend
                     {
-                        Date = reader.GetDateTime(0),
+                        Date = Convert.ToDateTime(reader.GetValue(0)),
                         PackageName = reader.GetString(1),
                         AvgExecutionMinutes = Convert.ToDecimal(reader.GetValue(2)),
                         MinExecutionMinutes = Convert.ToDecimal(reader.GetValue(3)),
@@ -1185,7 +1185,7 @@ namespace SSISAnalyticsDashboard.Services
                 {
                     results.Add(new ResourceUtilization
                     {
-                        TimeSlot = reader.GetDateTime(0),
+                        TimeSlot = Convert.ToDateTime(reader.GetValue(0)),
                         ConcurrentExecutions = Convert.ToInt32(reader.GetValue(1)),
                         TotalCPUTime = Convert.ToDecimal(reader.GetValue(2)),
                         PeakMemoryMB = Convert.ToDecimal(reader.GetValue(3)),
