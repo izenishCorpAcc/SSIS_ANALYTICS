@@ -707,7 +707,9 @@
         let successChart;
         let trendsChart;
         let autoRefreshInterval;
-        const REFRESH_INTERVAL = 5000; // 5 seconds
+        const REFRESH_INTERVAL = 30000; // 30 seconds - reduced server load
+        let lastUpdateTime = Date.now();
+        let consecutiveErrors = 0;
 
         // Initialize charts
         function initCharts() {

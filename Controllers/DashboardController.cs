@@ -37,17 +37,40 @@ namespace SSISAnalyticsDashboard.Controllers
             {
                 _logger.LogInformation($"Loading dashboard with business unit filter: {businessUnit ?? "ALL"}");
 
+                // Load all data in parallel for MUCH faster page load
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                
+                var metricsTask = _dataService.GetMetricsAsync(businessUnit);
+                var trendsTask = _dataService.GetTrendsAsync(businessUnit);
+                var recentErrorsTask = _dataService.GetErrorsAsync(businessUnit);
+                var recentExecutionsTask = _dataService.GetExecutionsAsync(businessUnit);
+                var lastExecutedPackagesTask = _dataService.GetLastExecutedPackagesAsync(10, businessUnit);
+                var currentExecutionsTask = _dataService.GetCurrentExecutionsAsync(businessUnit);
+                var packagePerformanceTask = _dataService.GetPackagePerformanceStatsAsync(30, businessUnit);
+                var failurePatternsTask = _dataService.GetFailurePatternsAsync(30, businessUnit);
+                var executionTimelineTask = _dataService.GetExecutionTimelineAsync(24, businessUnit);
+                
+                // Wait for all tasks to complete
+                await Task.WhenAll(
+                    metricsTask, trendsTask, recentErrorsTask, recentExecutionsTask,
+                    lastExecutedPackagesTask, currentExecutionsTask, packagePerformanceTask,
+                    failurePatternsTask, executionTimelineTask
+                );
+                
+                sw.Stop();
+                _logger.LogInformation($"⚡ Dashboard data loaded in {sw.ElapsedMilliseconds}ms (parallel execution)");
+
                 var viewModel = new DashboardViewModel
                 {
-                    Metrics = await _dataService.GetMetricsAsync(businessUnit),
-                    Trends = await _dataService.GetTrendsAsync(businessUnit),
-                    RecentErrors = await _dataService.GetErrorsAsync(businessUnit),
-                    RecentExecutions = await _dataService.GetExecutionsAsync(businessUnit),
-                    LastExecutedPackages = await _dataService.GetLastExecutedPackagesAsync(10, businessUnit),
-                    CurrentExecutions = await _dataService.GetCurrentExecutionsAsync(businessUnit),
-                    PackagePerformanceStats = await _dataService.GetPackagePerformanceStatsAsync(30, businessUnit),
-                    FailurePatterns = await _dataService.GetFailurePatternsAsync(30, businessUnit),
-                    ExecutionTimeline = await _dataService.GetExecutionTimelineAsync(24, businessUnit)
+                    Metrics = metricsTask.Result,
+                    Trends = trendsTask.Result,
+                    RecentErrors = recentErrorsTask.Result,
+                    RecentExecutions = recentExecutionsTask.Result,
+                    LastExecutedPackages = lastExecutedPackagesTask.Result,
+                    CurrentExecutions = currentExecutionsTask.Result,
+                    PackagePerformanceStats = packagePerformanceTask.Result,
+                    FailurePatterns = failurePatternsTask.Result,
+                    ExecutionTimeline = executionTimelineTask.Result
                 };
 
                 return View(viewModel);
@@ -63,6 +86,7 @@ namespace SSISAnalyticsDashboard.Controllers
 
         // API endpoints for AJAX refresh
         [HttpGet]
+        [ResponseCache(Duration = 5, Location = ResponseCacheLocation.Any)]
         public async Task<IActionResult> GetMetrics()
         {
             // Check if connection string exists in session
@@ -84,6 +108,7 @@ namespace SSISAnalyticsDashboard.Controllers
         }
 
         [HttpGet]
+        [ResponseCache(Duration = 10, Location = ResponseCacheLocation.Any)]
         public async Task<IActionResult> GetTrends()
         {
             // Check if connection string exists in session

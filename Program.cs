@@ -6,6 +6,12 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+// Add Memory Cache for performance optimization
+builder.Services.AddMemoryCache();
+
+// Add Response Caching
+builder.Services.AddResponseCaching();
+
 // Add HttpContextAccessor for session access in services
 builder.Services.AddHttpContextAccessor();
 
@@ -45,6 +51,9 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+// Enable response caching middleware
+app.UseResponseCaching();
 
 app.UseSession();  // Add session middleware
 

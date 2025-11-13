@@ -2,6 +2,7 @@ using Microsoft.Data.SqlClient;
 using SSISAnalyticsDashboard.Models;
 using SSISAnalyticsDashboard.Helpers;
 using System.Data;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace SSISAnalyticsDashboard.Services
 {
@@ -9,11 +10,14 @@ namespace SSISAnalyticsDashboard.Services
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ILogger<SSISDataService> _logger;
+        private readonly IMemoryCache _cache;
+        private const int CACHE_DURATION_SECONDS = 30; // Cache for 30 seconds
 
-        public SSISDataService(IHttpContextAccessor httpContextAccessor, ILogger<SSISDataService> logger)
+        public SSISDataService(IHttpContextAccessor httpContextAccessor, ILogger<SSISDataService> logger, IMemoryCache cache)
         {
             _httpContextAccessor = httpContextAccessor;
             _logger = logger;
+            _cache = cache;
         }
 
         private string GetConnectionString()
@@ -30,6 +34,15 @@ namespace SSISAnalyticsDashboard.Services
 
         public async Task<ExecutionMetrics> GetMetricsAsync(string? businessUnit = null)
         {
+            var cacheKey = $"Metrics_{businessUnit ?? "ALL"}";
+            
+            // Try to get from cache first
+            if (_cache.TryGetValue(cacheKey, out ExecutionMetrics? cachedMetrics) && cachedMetrics != null)
+            {
+                _logger.LogInformation($"✅ Metrics retrieved from cache for: {businessUnit ?? "ALL"}");
+                return cachedMetrics;
+            }
+            
             try
             {
                 var connectionString = GetConnectionString();
@@ -46,13 +59,14 @@ namespace SSISAnalyticsDashboard.Services
                         SUM(CASE WHEN status = 4 THEN 1 ELSE 0 END) as FailedExecutions,
                         SUM(CASE WHEN status = 7 THEN 1 ELSE 0 END) as SuccessfulExecutions,
                         AVG(DATEDIFF(SECOND, start_time, end_time)) as AvgDuration
-                    FROM [SSISDB].[catalog].[executions] e
+                    FROM [SSISDB].[catalog].[executions] e WITH (NOLOCK)
                     WHERE start_time >= DATEADD(day, -30, GETDATE())
                     {businessUnitFilter}";
                     
                 _logger.LogInformation($"Executing query: {query}");
 
                 using var command = new SqlCommand(query, connection);
+                command.CommandTimeout = 30; // 30 second timeout
                 using var reader = await command.ExecuteReaderAsync();
 
                 if (await reader.ReadAsync())
@@ -67,7 +81,7 @@ namespace SSISAnalyticsDashboard.Services
                         ? (decimal)successfulExecutions / totalExecutions * 100 
                         : 0;
 
-                    return new ExecutionMetrics
+                    var metrics = new ExecutionMetrics
                     {
                         TotalExecutions = totalExecutions,
                         SuccessfulExecutions = successfulExecutions,
@@ -75,6 +89,12 @@ namespace SSISAnalyticsDashboard.Services
                         SuccessRate = Math.Round(successRate, 2),
                         AvgDuration = avgDuration
                     };
+                    
+                    // Cache the result
+                    _cache.Set(cacheKey, metrics, TimeSpan.FromSeconds(CACHE_DURATION_SECONDS));
+                    _logger.LogInformation($"💾 Metrics cached for: {businessUnit ?? "ALL"}");
+                    
+                    return metrics;
                 }
 
                 return new ExecutionMetrics();
