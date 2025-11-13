@@ -1,0 +1,307 @@
+/* =============================================
+   Bauhaus Components - Bold Geometric Elements
+   ============================================= */
+
+/* Bauhaus Card */
+.bauhaus-card {
+    background: var(--bauhaus-white);
+    border: var(--bauhaus-border-medium) solid var(--bauhaus-black);
+    padding: var(--bauhaus-space-md);
+    box-shadow: var(--bauhaus-shadow-md);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.bauhaus-card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 10px 10px 0 var(--bauhaus-black);
+}
+
+.bauhaus-card--red {
+    border-color: var(--bauhaus-red);
+}
+
+.bauhaus-card--yellow {
+    border-color: var(--bauhaus-yellow);
+}
+
+.bauhaus-card--blue {
+    border-color: var(--bauhaus-blue);
+}
+
+.bauhaus-card__header {
+    border-bottom: var(--bauhaus-border-thin) solid var(--bauhaus-black);
+    padding-bottom: var(--bauhaus-space-sm);
+    margin-bottom: var(--bauhaus-space-md);
+    font-family: var(--font-bauhaus-heading);
+    font-weight: 900;
+    font-size: 1.25rem;
+    text-transform: uppercase;
+}
+
+.bauhaus-card__body {
+    font-size: 1rem;
+}
+
+.bauhaus-card__footer {
+    border-top: var(--bauhaus-border-thin) solid var(--bauhaus-gray);
+    padding-top: var(--bauhaus-space-sm);
+    margin-top: var(--bauhaus-space-md);
+    font-size: 0.875rem;
+    color: var(--bauhaus-gray);
+}
+
+/* Bauhaus Stat Box */
+.bauhaus-stat {
+    background: var(--bauhaus-white);
+    border: var(--bauhaus-border-thick) solid var(--bauhaus-black);
+    padding: var(--bauhaus-space-lg);
+    text-align: center;
+    box-shadow: var(--bauhaus-shadow-lg);
+}
+
+.bauhaus-stat__value {
+    font-family: var(--font-bauhaus-heading);
+    font-size: 3.5rem;
+    font-weight: 900;
+    line-height: 1;
+    margin: var(--bauhaus-space-sm) 0;
+}
+
+.bauhaus-stat__label {
+    font-family: var(--font-bauhaus-body);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--bauhaus-gray);
+}
+
+.bauhaus-stat__trend {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-top: var(--bauhaus-space-xs);
+}
+
+/* Bauhaus Button */
+.bauhaus-btn {
+    font-family: var(--font-bauhaus-heading);
+    font-weight: 900;
+    text-transform: uppercase;
+    padding: var(--bauhaus-space-sm) var(--bauhaus-space-lg);
+    border: var(--bauhaus-border-medium) solid var(--bauhaus-black);
+    background: var(--bauhaus-white);
+    color: var(--bauhaus-black);
+    cursor: pointer;
+    box-shadow: var(--bauhaus-shadow-sm);
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 1rem;
+}
+
+.bauhaus-btn:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 var(--bauhaus-black);
+}
+
+.bauhaus-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0 var(--bauhaus-black);
+}
+
+.bauhaus-btn--red {
+    background: var(--bauhaus-red);
+    border-color: var(--bauhaus-red);
+    color: var(--bauhaus-white);
+}
+
+.bauhaus-btn--yellow {
+    background: var(--bauhaus-yellow);
+    border-color: var(--bauhaus-yellow);
+    color: var(--bauhaus-black);
+}
+
+.bauhaus-btn--blue {
+    background: var(--bauhaus-blue);
+    border-color: var(--bauhaus-blue);
+    color: var(--bauhaus-white);
+}
+
+.bauhaus-btn--small {
+    padding: var(--bauhaus-space-xs) var(--bauhaus-space-sm);
+    font-size: 0.875rem;
+}
+
+/* Bauhaus Badge */
+.bauhaus-badge {
+    display: inline-block;
+    padding: var(--bauhaus-space-xs) var(--bauhaus-space-sm);
+    font-family: var(--font-bauhaus-body);
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: var(--bauhaus-border-thin) solid var(--bauhaus-black);
+}
+
+.bauhaus-badge--success {
+    background: var(--bauhaus-green);
+    border-color: var(--bauhaus-green);
+    color: var(--bauhaus-white);
+}
+
+.bauhaus-badge--danger {
+    background: var(--bauhaus-red);
+    border-color: var(--bauhaus-red);
+    color: var(--bauhaus-white);
+}
+
+.bauhaus-badge--warning {
+    background: var(--bauhaus-yellow);
+    border-color: var(--bauhaus-yellow);
+    color: var(--bauhaus-black);
+}
+
+.bauhaus-badge--info {
+    background: var(--bauhaus-blue);
+    border-color: var(--bauhaus-blue);
+    color: var(--bauhaus-white);
+}
+
+/* Bauhaus Progress Bar */
+.bauhaus-progress {
+    height: var(--bauhaus-space-lg);
+    background: var(--bauhaus-white);
+    border: var(--bauhaus-border-medium) solid var(--bauhaus-black);
+    overflow: hidden;
+    position: relative;
+}
+
+.bauhaus-progress__bar {
+    height: 100%;
+    background: var(--bauhaus-blue);
+    transition: width 0.3s ease;
+    position: relative;
+}
+
+.bauhaus-progress__bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: var(--bauhaus-border-thick);
+    height: 100%;
+    background: var(--bauhaus-black);
+}
+
+.bauhaus-progress__bar--success {
+    background: var(--bauhaus-green);
+}
+
+.bauhaus-progress__bar--warning {
+    background: var(--bauhaus-yellow);
+}
+
+.bauhaus-progress__bar--danger {
+    background: var(--bauhaus-red);
+}
+
+/* Bauhaus Table */
+.bauhaus-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: var(--bauhaus-border-medium) solid var(--bauhaus-black);
+}
+
+.bauhaus-table thead {
+    background: var(--bauhaus-black);
+    color: var(--bauhaus-white);
+}
+
+.bauhaus-table th {
+    padding: var(--bauhaus-space-sm);
+    text-align: left;
+    font-family: var(--font-bauhaus-heading);
+    font-weight: 900;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 1px;
+}
+
+.bauhaus-table td {
+    padding: var(--bauhaus-space-sm);
+    border-top: var(--bauhaus-border-thin) solid var(--bauhaus-gray);
+}
+
+.bauhaus-table tbody tr:nth-child(even) {
+    background: #F8F9FA;
+}
+
+.bauhaus-table tbody tr:hover {
+    background: var(--bauhaus-yellow);
+}
+
+/* Bauhaus Alert */
+.bauhaus-alert {
+    padding: var(--bauhaus-space-md);
+    border: var(--bauhaus-border-medium) solid var(--bauhaus-black);
+    margin-bottom: var(--bauhaus-space-md);
+    box-shadow: var(--bauhaus-shadow-sm);
+}
+
+.bauhaus-alert--success {
+    background: var(--bauhaus-green);
+    color: var(--bauhaus-white);
+    border-color: var(--bauhaus-green);
+}
+
+.bauhaus-alert--danger {
+    background: var(--bauhaus-red);
+    color: var(--bauhaus-white);
+    border-color: var(--bauhaus-red);
+}
+
+.bauhaus-alert--warning {
+    background: var(--bauhaus-yellow);
+    color: var(--bauhaus-black);
+    border-color: var(--bauhaus-yellow);
+}
+
+.bauhaus-alert--info {
+    background: var(--bauhaus-blue);
+    color: var(--bauhaus-white);
+    border-color: var(--bauhaus-blue);
+}
+
+/* Bauhaus Geometric Decoration */
+.bauhaus-decorator {
+    position: absolute;
+    pointer-events: none;
+}
+
+.bauhaus-decorator--circle {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: var(--bauhaus-border-medium) solid var(--bauhaus-red);
+}
+
+.bauhaus-decorator--square {
+    width: 80px;
+    height: 80px;
+    background: var(--bauhaus-yellow);
+    transform: rotate(45deg);
+}
+
+/* Bauhaus Chart Container */
+.bauhaus-chart-container {
+    background: var(--bauhaus-white);
+    border: var(--bauhaus-border-medium) solid var(--bauhaus-black);
+    padding: var(--bauhaus-space-md);
+    box-shadow: var(--bauhaus-shadow-md);
+}
+
+.bauhaus-chart-container canvas {
+    max-height: 400px;
+}

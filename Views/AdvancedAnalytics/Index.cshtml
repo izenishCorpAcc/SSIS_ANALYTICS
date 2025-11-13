@@ -1,0 +1,464 @@
+@{
+    ViewData["Title"] = "Advanced Analytics";
+    var reliabilityScores = ViewBag.ReliabilityScores as List<SSISAnalyticsDashboard.Models.PackageReliability> ?? new();
+    var mtbfAnalysis = ViewBag.MTBFAnalysis as List<SSISAnalyticsDashboard.Models.MTBFAnalysis> ?? new();
+    var errorClusters = ViewBag.ErrorClusters as List<SSISAnalyticsDashboard.Models.ErrorCluster> ?? new();
+    var slaCompliance = ViewBag.SLACompliance as List<SSISAnalyticsDashboard.Models.SLACompliance> ?? new();
+    var performanceTrends = ViewBag.PerformanceTrends as List<SSISAnalyticsDashboard.Models.PerformanceTrend> ?? new();
+    var heatmapData = ViewBag.ExecutionHeatmap as List<SSISAnalyticsDashboard.Models.ExecutionHeatmapData> ?? new();
+    var correlations = ViewBag.PackageCorrelation as List<SSISAnalyticsDashboard.Models.PackageCorrelation> ?? new();
+    var resourceUtil = ViewBag.ResourceUtilization as List<SSISAnalyticsDashboard.Models.ResourceUtilization> ?? new();
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - SSIS Analytics</title>
+    <link rel="stylesheet" href="~/css/bauhaus-tokens.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/bauhaus-components.css" asp-append-version="true" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <style>
+        body {
+            background: var(--bauhaus-white);
+            font-family: var(--font-bauhaus-body);
+            padding: var(--bauhaus-space-lg);
+        }
+        .bauhaus-page-header {
+            border-bottom: var(--bauhaus-border-thick) solid var(--bauhaus-black);
+            padding-bottom: var(--bauhaus-space-md);
+            margin-bottom: var(--bauhaus-space-xl);
+        }
+        .bauhaus-section {
+            margin-bottom: var(--bauhaus-space-xl);
+        }
+        .bauhaus-section-title {
+            background: var(--bauhaus-black);
+            color: var(--bauhaus-white);
+            padding: var(--bauhaus-space-sm) var(--bauhaus-space-md);
+            margin-bottom: var(--bauhaus-space-md);
+            font-family: var(--font-bauhaus-heading);
+            font-size: 1.5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div class="bauhaus-page-header">
+        <h1 class="bauhaus-heading-xl bauhaus-text-black">Advanced Analytics</h1>
+        <p class="bauhaus-heading-sm bauhaus-text-gray">Comprehensive SSIS Performance Insights</p>
+    </div>
+
+    <!-- Key Metrics Summary -->
+    <div class="bauhaus-section">
+        <div class="bauhaus-grid-4" style="gap: var(--bauhaus-space-md);">
+            <div class="bauhaus-stat">
+                <div class="bauhaus-stat__label">Total Packages</div>
+                <div class="bauhaus-stat__value bauhaus-text-blue">@reliabilityScores.Count</div>
+            </div>
+            <div class="bauhaus-stat">
+                <div class="bauhaus-stat__label">Error Clusters</div>
+                <div class="bauhaus-stat__value bauhaus-text-red">@errorClusters.Count</div>
+            </div>
+            <div class="bauhaus-stat">
+                <div class="bauhaus-stat__label">Avg MTBF (Hours)</div>
+                <div class="bauhaus-stat__value bauhaus-text-yellow" style="color: var(--bauhaus-black);">
+                    @(mtbfAnalysis.Any() ? Math.Round(mtbfAnalysis.Average(m => m.MeanTimeBetweenFailures), 1) : 0)
+                </div>
+            </div>
+            <div class="bauhaus-stat">
+                <div class="bauhaus-stat__label">SLA Compliance</div>
+                <div class="bauhaus-stat__value bauhaus-text-green">
+                    @(slaCompliance.Any() ? Math.Round(slaCompliance.Average(s => s.CompliancePercentage), 1) : 0)%
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Package Reliability Scores -->
+    <div class="bauhaus-section">
+        <div class="bauhaus-section-title">📊 Package Reliability Scores</div>
+        <div class="bauhaus-grid-2" style="gap: var(--bauhaus-space-md);">
+            <div class="bauhaus-chart-container">
+                <canvas id="reliabilityChart"></canvas>
+            </div>
+            <div class="bauhaus-card bauhaus-card--blue">
+                <div class="bauhaus-card__header">Top Reliable Packages</div>
+                <div class="bauhaus-card__body">
+                    <table class="bauhaus-table">
+                        <thead>
+                            <tr>
+                                <th>Package</th>
+                                <th>Score</th>
+                                <th>Trend</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var pkg in reliabilityScores.OrderByDescending(r => r.ReliabilityScore).Take(10))
+                            {
+                                <tr>
+                                    <td style="font-weight: 700;">@pkg.PackageName</td>
+                                    <td>@pkg.ReliabilityScore.ToString("F1")%</td>
+                                    <td>
+                                        <span class="bauhaus-badge bauhaus-badge--@(pkg.Trend == "Improving" ? "success" : pkg.Trend == "Declining" ? "danger" : "info")">
+                                            @pkg.Trend
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MTBF Analysis -->
+    <div class="bauhaus-section">
+        <div class="bauhaus-section-title">⏱️ Mean Time Between Failures (MTBF)</div>
+        <div class="bauhaus-grid-2" style="gap: var(--bauhaus-space-md);">
+            <div class="bauhaus-chart-container">
+                <canvas id="mtbfChart"></canvas>
+            </div>
+            <div class="bauhaus-card bauhaus-card--red">
+                <div class="bauhaus-card__header">MTBF Status</div>
+                <div class="bauhaus-card__body">
+                    <table class="bauhaus-table">
+                        <thead>
+                            <tr>
+                                <th>Package</th>
+                                <th>MTBF (hrs)</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var mtbf in mtbfAnalysis.OrderByDescending(m => m.MeanTimeBetweenFailures).Take(10))
+                            {
+                                <tr>
+                                    <td style="font-weight: 700;">@mtbf.PackageName</td>
+                                    <td>@mtbf.MeanTimeBetweenFailures.ToString("F1")</td>
+                                    <td>
+                                        <span class="bauhaus-badge bauhaus-badge--@(mtbf.Status == "Excellent" ? "success" : mtbf.Status == "Good" ? "info" : mtbf.Status == "Fair" ? "warning" : "danger")">
+                                            @mtbf.Status
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Clustering -->
+    <div class="bauhaus-section">
+        <div class="bauhaus-section-title">🔍 Error Clustering Analysis</div>
+        <div class="bauhaus-grid-2" style="gap: var(--bauhaus-space-md);">
+            <div class="bauhaus-chart-container">
+                <canvas id="errorClusterChart"></canvas>
+            </div>
+            <div class="bauhaus-card bauhaus-card--yellow">
+                <div class="bauhaus-card__header">Critical Error Patterns</div>
+                <div class="bauhaus-card__body">
+                    <table class="bauhaus-table">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Frequency</th>
+                                <th>Severity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cluster in errorClusters.OrderByDescending(e => e.Frequency).Take(10))
+                            {
+                                <tr>
+                                    <td style="font-weight: 700;">@cluster.ErrorCategory</td>
+                                    <td>@cluster.Frequency</td>
+                                    <td>
+                                        <span class="bauhaus-badge bauhaus-badge--@(cluster.Severity == "Critical" ? "danger" : cluster.Severity == "High" ? "warning" : "info")">
+                                            @cluster.Severity
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLA Compliance -->
+    <div class="bauhaus-section">
+        <div class="bauhaus-section-title">✅ SLA Compliance Tracking</div>
+        <div class="bauhaus-chart-container">
+            <canvas id="slaChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Execution Heatmap -->
+    <div class="bauhaus-section">
+        <div class="bauhaus-section-title">🌡️ Execution Heatmap (Time Distribution)</div>
+        <div class="bauhaus-chart-container" style="height: 500px;">
+            <canvas id="heatmapChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Package Correlation -->
+    <div class="bauhaus-section">
+        <div class="bauhaus-section-title">🔗 Package Execution Correlation</div>
+        <div class="bauhaus-grid-2" style="gap: var(--bauhaus-space-md);">
+            <div class="bauhaus-chart-container">
+                <canvas id="correlationChart"></canvas>
+            </div>
+            <div class="bauhaus-card">
+                <div class="bauhaus-card__header">Top Correlations</div>
+                <div class="bauhaus-card__body">
+                    <table class="bauhaus-table">
+                        <thead>
+                            <tr>
+                                <th>Package Pair</th>
+                                <th>Co-Executions</th>
+                                <th>Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var corr in correlations.OrderByDescending(c => c.CorrelationScore).Take(10))
+                            {
+                                <tr>
+                                    <td style="font-weight: 700; font-size: 0.875rem;">@corr.Package1 ↔ @corr.Package2</td>
+                                    <td>@corr.CoExecutionCount</td>
+                                    <td>@corr.CorrelationScore.ToString("F1")%</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resource Utilization -->
+    <div class="bauhaus-section">
+        <div class="bauhaus-section-title">💻 Resource Utilization Trends</div>
+        <div class="bauhaus-chart-container">
+            <canvas id="resourceChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Chart.js default configuration
+        Chart.defaults.font.family = "'Helvetica', 'Arial', sans-serif";
+        Chart.defaults.font.size = 12;
+        Chart.defaults.color = '#1D1D1D';
+
+        // Bauhaus color palette
+        const bauhausColors = {
+            red: '#E63946',
+            yellow: '#F1C40F',
+            blue: '#2E86AB',
+            green: '#06A77D',
+            orange: '#F77F00',
+            purple: '#5E548E',
+            black: '#1D1D1D',
+            gray: '#6C757D'
+        };
+
+        // Reliability Chart
+        new Chart(document.getElementById('reliabilityChart'), {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(Json.Serialize(reliabilityScores.OrderByDescending(r => r.ReliabilityScore).Take(10).Select(r => r.PackageName))),
+                datasets: [{
+                    label: 'Reliability Score',
+                    data: @Html.Raw(Json.Serialize(reliabilityScores.OrderByDescending(r => r.ReliabilityScore).Take(10).Select(r => r.ReliabilityScore))),
+                    backgroundColor: bauhausColors.blue,
+                    borderColor: bauhausColors.black,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: { display: true, text: 'Package Reliability Scores', font: { size: 16, weight: 'bold' } },
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, max: 100, title: { display: true, text: 'Score (%)' } }
+                }
+            }
+        });
+
+        // MTBF Chart
+        new Chart(document.getElementById('mtbfChart'), {
+            type: 'horizontalBar',
+            data: {
+                labels: @Html.Raw(Json.Serialize(mtbfAnalysis.OrderBy(m => m.MeanTimeBetweenFailures).Take(10).Select(m => m.PackageName))),
+                datasets: [{
+                    label: 'MTBF (Hours)',
+                    data: @Html.Raw(Json.Serialize(mtbfAnalysis.OrderBy(m => m.MeanTimeBetweenFailures).Take(10).Select(m => m.MeanTimeBetweenFailures))),
+                    backgroundColor: bauhausColors.red,
+                    borderColor: bauhausColors.black,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                plugins: {
+                    title: { display: true, text: 'Mean Time Between Failures', font: { size: 16, weight: 'bold' } },
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { beginAtZero: true, title: { display: true, text: 'Hours' } }
+                }
+            }
+        });
+
+        // Error Cluster Chart
+        new Chart(document.getElementById('errorClusterChart'), {
+            type: 'doughnut',
+            data: {
+                labels: @Html.Raw(Json.Serialize(errorClusters.GroupBy(e => e.ErrorCategory).Select(g => g.Key))),
+                datasets: [{
+                    data: @Html.Raw(Json.Serialize(errorClusters.GroupBy(e => e.ErrorCategory).Select(g => g.Sum(x => x.Frequency)))),
+                    backgroundColor: [bauhausColors.red, bauhausColors.yellow, bauhausColors.blue, bauhausColors.green, bauhausColors.orange, bauhausColors.purple],
+                    borderColor: bauhausColors.black,
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: { display: true, text: 'Error Distribution by Category', font: { size: 16, weight: 'bold' } },
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+
+        // SLA Compliance Chart
+        new Chart(document.getElementById('slaChart'), {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(Json.Serialize(slaCompliance.OrderByDescending(s => s.CompliancePercentage).Take(15).Select(s => s.PackageName))),
+                datasets: [
+                    {
+                        label: 'Compliant',
+                        data: @Html.Raw(Json.Serialize(slaCompliance.OrderByDescending(s => s.CompliancePercentage).Take(15).Select(s => s.CompiantExecutions))),
+                        backgroundColor: bauhausColors.green,
+                        borderColor: bauhausColors.black,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Non-Compliant',
+                        data: @Html.Raw(Json.Serialize(slaCompliance.OrderByDescending(s => s.CompliancePercentage).Take(15).Select(s => s.TotalExecutions - s.CompiantExecutions))),
+                        backgroundColor: bauhausColors.red,
+                        borderColor: bauhausColors.black,
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: { display: true, text: 'SLA Compliance by Package', font: { size: 16, weight: 'bold' } }
+                },
+                scales: {
+                    x: { stacked: true },
+                    y: { stacked: true, beginAtZero: true, title: { display: true, text: 'Executions' } }
+                }
+            }
+        });
+
+        // Heatmap Chart (using bubble chart)
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        new Chart(document.getElementById('heatmapChart'), {
+            type: 'bubble',
+            data: {
+                datasets: [{
+                    label: 'Execution Activity',
+                    data: @Html.Raw(Json.Serialize(heatmapData.Select(h => new { x = h.HourOfDay, y = h.DayOfWeek, r = h.ExecutionCount }))),
+                    backgroundColor: bauhausColors.blue + '80',
+                    borderColor: bauhausColors.black,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'Execution Heatmap: Day of Week vs Hour', font: { size: 16, weight: 'bold' } },
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { title: { display: true, text: 'Hour of Day' }, min: 0, max: 23 },
+                    y: { 
+                        title: { display: true, text: 'Day of Week' }, 
+                        min: 1, 
+                        max: 7,
+                        ticks: { callback: function(value) { return dayNames[value - 1] || ''; } }
+                    }
+                }
+            }
+        });
+
+        // Correlation Network Chart
+        new Chart(document.getElementById('correlationChart'), {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Package Correlations',
+                    data: @Html.Raw(Json.Serialize(correlations.Take(20).Select((c, i) => new { x = i, y = c.CorrelationScore }))),
+                    backgroundColor: bauhausColors.yellow,
+                    borderColor: bauhausColors.black,
+                    borderWidth: 2,
+                    pointRadius: 8,
+                    pointHoverRadius: 12
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: { display: true, text: 'Package Execution Correlation Scores', font: { size: 16, weight: 'bold' } },
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, max: 100, title: { display: true, text: 'Correlation Score (%)' } },
+                    x: { display: false }
+                }
+            }
+        });
+
+        // Resource Utilization Chart
+        new Chart(document.getElementById('resourceChart'), {
+            type: 'line',
+            data: {
+                labels: @Html.Raw(Json.Serialize(resourceUtil.OrderBy(r => r.TimeSlot).Select(r => r.TimeSlot.ToString("MM/dd HH:mm")))),
+                datasets: [{
+                    label: 'Concurrent Executions',
+                    data: @Html.Raw(Json.Serialize(resourceUtil.OrderBy(r => r.TimeSlot).Select(r => r.ConcurrentExecutions))),
+                    borderColor: bauhausColors.red,
+                    backgroundColor: bauhausColors.red + '40',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: { display: true, text: 'Resource Utilization Over Time', font: { size: 16, weight: 'bold' } }
+                },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Concurrent Executions' } }
+                }
+            }
+        });
+
+        console.log('🎨 Bauhaus Advanced Analytics Dashboard loaded');
+    </script>
+</body>
+</html>

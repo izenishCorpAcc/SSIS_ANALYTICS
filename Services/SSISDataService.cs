@@ -585,5 +585,625 @@ namespace SSISAnalyticsDashboard.Services
                 throw;
             }
         }
+
+        // ========== Advanced Analytics Methods ==========
+
+        public async Task<List<PackageReliability>> GetPackageReliabilityScoresAsync()
+        {
+            var cacheKey = "package_reliability";
+            if (_cache.TryGetValue(cacheKey, out List<PackageReliability>? cachedData) && cachedData != null)
+            {
+                Console.WriteLine("✅ Package Reliability retrieved from cache");
+                return cachedData;
+            }
+
+            try
+            {
+                var connectionString = GetConnectionString();
+                using var connection = new SqlConnection(connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    WITH ReliabilityData AS (
+                        SELECT 
+                            e.package_name,
+                            COUNT(*) as total_executions,
+                            SUM(CASE WHEN e.status = 7 THEN 1 ELSE 0 END) as successful_executions,
+                            SUM(CASE WHEN e.status = 4 THEN 1 ELSE 0 END) as failed_executions,
+                            CAST(SUM(CASE WHEN e.status = 7 THEN 1.0 ELSE 0.0 END) * 100.0 / COUNT(*) AS DECIMAL(5,2)) as success_rate
+                        FROM [SSISDB].[catalog].[executions] e WITH (NOLOCK)
+                        WHERE e.start_time >= DATEADD(day, -30, GETDATE())
+                        GROUP BY e.package_name
+                        HAVING COUNT(*) >= 5
+                    ),
+                    TrendData AS (
+                        SELECT 
+                            e.package_name,
+                            CAST(SUM(CASE WHEN e.status = 7 AND e.start_time >= DATEADD(day, -7, GETDATE()) THEN 1.0 ELSE 0.0 END) * 100.0 / 
+                                 NULLIF(COUNT(CASE WHEN e.start_time >= DATEADD(day, -7, GETDATE()) THEN 1 END), 0) AS DECIMAL(5,2)) as recent_success_rate
+                        FROM [SSISDB].[catalog].[executions] e WITH (NOLOCK)
+                        WHERE e.start_time >= DATEADD(day, -30, GETDATE())
+                        GROUP BY e.package_name
+                    )
+                    SELECT 
+                        r.package_name,
+                        r.total_executions,
+                        r.successful_executions,
+                        r.failed_executions,
+                        r.success_rate,
+                        CAST((r.success_rate + ISNULL(t.recent_success_rate, 0)) / 2 AS DECIMAL(5,2)) as reliability_score,
+                        CASE 
+                            WHEN ISNULL(t.recent_success_rate, 0) > r.success_rate THEN 'Improving'
+                            WHEN ISNULL(t.recent_success_rate, 0) < r.success_rate THEN 'Declining'
+                            ELSE 'Stable'
+                        END as trend
+                    FROM ReliabilityData r
+                    LEFT JOIN TrendData t ON r.package_name = t.package_name
+                    ORDER BY reliability_score DESC, total_executions DESC";
+
+                using var command = new SqlCommand(query, connection);
+                command.CommandTimeout = 30;
+                using var reader = await command.ExecuteReaderAsync();
+
+                var results = new List<PackageReliability>();
+                while (await reader.ReadAsync())
+                {
+                    results.Add(new PackageReliability
+                    {
+                        PackageName = reader.GetString(0),
+                        TotalExecutions = Convert.ToInt32(reader.GetValue(1)),
+                        SuccessfulExecutions = Convert.ToInt32(reader.GetValue(2)),
+                        FailedExecutions = Convert.ToInt32(reader.GetValue(3)),
+                        SuccessRate = reader.GetDecimal(4),
+                        ReliabilityScore = reader.GetDecimal(5),
+                        Trend = reader.GetString(6)
+                    });
+                }
+
+                _cache.Set(cacheKey, results, TimeSpan.FromSeconds(CACHE_DURATION_SECONDS));
+                Console.WriteLine($"💾 Package Reliability cached ({results.Count} packages)");
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching package reliability scores");
+                throw;
+            }
+        }
+
+        public async Task<List<MTBFAnalysis>> GetMTBFAnalysisAsync()
+        {
+            var cacheKey = "mtbf_analysis";
+            if (_cache.TryGetValue(cacheKey, out List<MTBFAnalysis>? cachedData) && cachedData != null)
+            {
+                Console.WriteLine("✅ MTBF Analysis retrieved from cache");
+                return cachedData;
+            }
+
+            try
+            {
+                var connectionString = GetConnectionString();
+                using var connection = new SqlConnection(connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    WITH FailureData AS (
+                        SELECT 
+                            package_name,
+                            start_time,
+                            LAG(start_time) OVER (PARTITION BY package_name ORDER BY start_time) as prev_failure_time
+                        FROM [SSISDB].[catalog].[executions] WITH (NOLOCK)
+                        WHERE status = 4 AND start_time >= DATEADD(day, -30, GETDATE())
+                    ),
+                    MTBFCalc AS (
+                        SELECT 
+                            package_name,
+                            COUNT(*) as failure_count,
+                            AVG(DATEDIFF(HOUR, prev_failure_time, start_time)) as mtbf_hours,
+                            MAX(start_time) as last_failure
+                        FROM FailureData
+                        WHERE prev_failure_time IS NOT NULL
+                        GROUP BY package_name
+                    ),
+                    TotalUptime AS (
+                        SELECT 
+                            package_name,
+                            COUNT(*) as total_executions
+                        FROM [SSISDB].[catalog].[executions] WITH (NOLOCK)
+                        WHERE start_time >= DATEADD(day, -30, GETDATE())
+                        GROUP BY package_name
+                    )
+                    SELECT 
+                        ISNULL(m.package_name, t.package_name) as package_name,
+                        ISNULL(m.mtbf_hours, 720) as mtbf_hours,
+                        CAST((CAST(t.total_executions - ISNULL(m.failure_count, 0) AS FLOAT) * 100.0 / t.total_executions) AS DECIMAL(5,2)) as availability_pct,
+                        ISNULL(m.failure_count, 0) as failure_count,
+                        m.last_failure,
+                        CASE 
+                            WHEN ISNULL(m.mtbf_hours, 720) >= 168 THEN 'Excellent'
+                            WHEN ISNULL(m.mtbf_hours, 720) >= 72 THEN 'Good'
+                            WHEN ISNULL(m.mtbf_hours, 720) >= 24 THEN 'Fair'
+                            ELSE 'Poor'
+                        END as status
+                    FROM TotalUptime t
+                    LEFT JOIN MTBFCalc m ON t.package_name = m.package_name
+                    WHERE t.total_executions >= 5
+                    ORDER BY mtbf_hours DESC";
+
+                using var command = new SqlCommand(query, connection);
+                command.CommandTimeout = 30;
+                using var reader = await command.ExecuteReaderAsync();
+
+                var results = new List<MTBFAnalysis>();
+                while (await reader.ReadAsync())
+                {
+                    results.Add(new MTBFAnalysis
+                    {
+                        PackageName = reader.GetString(0),
+                        MeanTimeBetweenFailures = reader.GetDecimal(1),
+                        AvailabilityPercentage = reader.GetDecimal(2),
+                        FailureCount = Convert.ToInt32(reader.GetValue(3)),
+                        LastFailure = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
+                        Status = reader.GetString(5)
+                    });
+                }
+
+                _cache.Set(cacheKey, results, TimeSpan.FromSeconds(CACHE_DURATION_SECONDS));
+                Console.WriteLine($"💾 MTBF Analysis cached ({results.Count} packages)");
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching MTBF analysis");
+                throw;
+            }
+        }
+
+        public async Task<List<ErrorCluster>> GetErrorClustersAsync()
+        {
+            var cacheKey = "error_clusters";
+            if (_cache.TryGetValue(cacheKey, out List<ErrorCluster>? cachedData) && cachedData != null)
+            {
+                Console.WriteLine("✅ Error Clusters retrieved from cache");
+                return cachedData;
+            }
+
+            try
+            {
+                var connectionString = GetConnectionString();
+                using var connection = new SqlConnection(connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    WITH ErrorData AS (
+                        SELECT 
+                            e.execution_id,
+                            ex.package_name,
+                            e.message,
+                            e.event_name,
+                            e.message_time,
+                            CASE 
+                                WHEN e.message LIKE '%timeout%' OR e.message LIKE '%time out%' THEN 'Timeout'
+                                WHEN e.message LIKE '%connection%' THEN 'Connection'
+                                WHEN e.message LIKE '%permission%' OR e.message LIKE '%access%' THEN 'Permission'
+                                WHEN e.message LIKE '%memory%' THEN 'Memory'
+                                WHEN e.message LIKE '%validation%' THEN 'Validation'
+                                WHEN e.message LIKE '%deadlock%' THEN 'Deadlock'
+                                ELSE 'Other'
+                            END as error_category
+                        FROM [SSISDB].[catalog].[event_messages] e WITH (NOLOCK)
+                        JOIN [SSISDB].[catalog].[executions] ex WITH (NOLOCK) ON e.operation_id = ex.execution_id
+                        WHERE e.message_type = 120
+                          AND e.message_time >= DATEADD(day, -30, GETDATE())
+                    )
+                    SELECT 
+                        error_category,
+                        LEFT(message, 200) as error_message,
+                        COUNT(*) as frequency,
+                        MIN(message_time) as first_occurrence,
+                        MAX(message_time) as last_occurrence,
+                        CASE 
+                            WHEN COUNT(*) > 50 THEN 'Critical'
+                            WHEN COUNT(*) > 20 THEN 'High'
+                            WHEN COUNT(*) > 10 THEN 'Medium'
+                            ELSE 'Low'
+                        END as severity
+                    FROM ErrorData
+                    GROUP BY error_category, LEFT(message, 200)
+                    HAVING COUNT(*) >= 3
+                    ORDER BY frequency DESC";
+
+                using var command = new SqlCommand(query, connection);
+                command.CommandTimeout = 30;
+                using var reader = await command.ExecuteReaderAsync();
+
+                var results = new List<ErrorCluster>();
+                while (await reader.ReadAsync())
+                {
+                    results.Add(new ErrorCluster
+                    {
+                        ErrorCategory = reader.GetString(0),
+                        ErrorMessage = reader.GetString(1),
+                        Frequency = Convert.ToInt32(reader.GetValue(2)),
+                        FirstOccurrence = reader.GetDateTime(3),
+                        LastOccurrence = reader.GetDateTime(4),
+                        Severity = reader.GetString(5),
+                        AffectedPackages = new List<string>()
+                    });
+                }
+
+                _cache.Set(cacheKey, results, TimeSpan.FromSeconds(CACHE_DURATION_SECONDS));
+                Console.WriteLine($"💾 Error Clusters cached ({results.Count} clusters)");
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching error clusters");
+                throw;
+            }
+        }
+
+        public async Task<List<SLACompliance>> GetSLAComplianceAsync()
+        {
+            var cacheKey = "sla_compliance";
+            if (_cache.TryGetValue(cacheKey, out List<SLACompliance>? cachedData) && cachedData != null)
+            {
+                Console.WriteLine("✅ SLA Compliance retrieved from cache");
+                return cachedData;
+            }
+
+            try
+            {
+                var connectionString = GetConnectionString();
+                using var connection = new SqlConnection(connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    WITH PackageSLA AS (
+                        SELECT 
+                            package_name,
+                            PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY DATEDIFF(MINUTE, start_time, end_time)) 
+                                OVER (PARTITION BY package_name) * 1.2 as sla_threshold
+                        FROM [SSISDB].[catalog].[executions] WITH (NOLOCK)
+                        WHERE status = 7
+                          AND end_time IS NOT NULL
+                          AND start_time >= DATEADD(day, -30, GETDATE())
+                    ),
+                    ComplianceData AS (
+                        SELECT 
+                            e.package_name,
+                            s.sla_threshold,
+                            AVG(DATEDIFF(MINUTE, e.start_time, e.end_time)) as avg_execution_minutes,
+                            COUNT(*) as total_executions,
+                            SUM(CASE WHEN DATEDIFF(MINUTE, e.start_time, e.end_time) <= s.sla_threshold THEN 1 ELSE 0 END) as compliant_executions
+                        FROM [SSISDB].[catalog].[executions] e WITH (NOLOCK)
+                        JOIN PackageSLA s ON e.package_name = s.package_name
+                        WHERE e.status = 7
+                          AND e.end_time IS NOT NULL
+                          AND e.start_time >= DATEADD(day, -30, GETDATE())
+                        GROUP BY e.package_name, s.sla_threshold
+                    )
+                    SELECT DISTINCT
+                        package_name,
+                        sla_threshold,
+                        avg_execution_minutes,
+                        total_executions,
+                        compliant_executions,
+                        CAST(compliant_executions * 100.0 / total_executions AS DECIMAL(5,2)) as compliance_percentage,
+                        CASE 
+                            WHEN CAST(compliant_executions * 100.0 / total_executions AS DECIMAL(5,2)) >= 95 THEN 'Excellent'
+                            WHEN CAST(compliant_executions * 100.0 / total_executions AS DECIMAL(5,2)) >= 85 THEN 'Good'
+                            WHEN CAST(compliant_executions * 100.0 / total_executions AS DECIMAL(5,2)) >= 70 THEN 'Fair'
+                            ELSE 'Poor'
+                        END as compliance_status
+                    FROM ComplianceData
+                    WHERE total_executions >= 5
+                    ORDER BY compliance_percentage DESC";
+
+                using var command = new SqlCommand(query, connection);
+                command.CommandTimeout = 30;
+                using var reader = await command.ExecuteReaderAsync();
+
+                var results = new List<SLACompliance>();
+                while (await reader.ReadAsync())
+                {
+                    results.Add(new SLACompliance
+                    {
+                        PackageName = reader.GetString(0),
+                        SLAThresholdMinutes = reader.GetDecimal(1),
+                        AvgExecutionMinutes = reader.GetDecimal(2),
+                        TotalExecutions = Convert.ToInt32(reader.GetValue(3)),
+                        CompiantExecutions = Convert.ToInt32(reader.GetValue(4)),
+                        CompliancePercentage = reader.GetDecimal(5),
+                        ComplianceStatus = reader.GetString(6)
+                    });
+                }
+
+                _cache.Set(cacheKey, results, TimeSpan.FromSeconds(CACHE_DURATION_SECONDS));
+                Console.WriteLine($"💾 SLA Compliance cached ({results.Count} packages)");
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching SLA compliance");
+                throw;
+            }
+        }
+
+        public async Task<List<PerformanceTrend>> GetPerformanceTrendsAsync()
+        {
+            var cacheKey = "performance_trends";
+            if (_cache.TryGetValue(cacheKey, out List<PerformanceTrend>? cachedData) && cachedData != null)
+            {
+                Console.WriteLine("✅ Performance Trends retrieved from cache");
+                return cachedData;
+            }
+
+            try
+            {
+                var connectionString = GetConnectionString();
+                using var connection = new SqlConnection(connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    WITH DailyPerformance AS (
+                        SELECT 
+                            CAST(start_time AS DATE) as execution_date,
+                            package_name,
+                            AVG(DATEDIFF(MINUTE, start_time, end_time)) as avg_minutes,
+                            MIN(DATEDIFF(MINUTE, start_time, end_time)) as min_minutes,
+                            MAX(DATEDIFF(MINUTE, start_time, end_time)) as max_minutes,
+                            COUNT(*) as execution_count,
+                            LAG(AVG(DATEDIFF(MINUTE, start_time, end_time))) OVER (PARTITION BY package_name ORDER BY CAST(start_time AS DATE)) as prev_avg
+                        FROM [SSISDB].[catalog].[executions] WITH (NOLOCK)
+                        WHERE status = 7
+                          AND end_time IS NOT NULL
+                          AND start_time >= DATEADD(day, -14, GETDATE())
+                        GROUP BY CAST(start_time AS DATE), package_name
+                    )
+                    SELECT 
+                        execution_date,
+                        package_name,
+                        avg_minutes,
+                        min_minutes,
+                        max_minutes,
+                        execution_count,
+                        CASE 
+                            WHEN prev_avg IS NULL THEN 'Stable'
+                            WHEN avg_minutes > prev_avg * 1.1 THEN 'Degrading'
+                            WHEN avg_minutes < prev_avg * 0.9 THEN 'Improving'
+                            ELSE 'Stable'
+                        END as trend
+                    FROM DailyPerformance
+                    WHERE execution_count >= 2
+                    ORDER BY package_name, execution_date DESC";
+
+                using var command = new SqlCommand(query, connection);
+                command.CommandTimeout = 30;
+                using var reader = await command.ExecuteReaderAsync();
+
+                var results = new List<PerformanceTrend>();
+                while (await reader.ReadAsync())
+                {
+                    results.Add(new PerformanceTrend
+                    {
+                        Date = reader.GetDateTime(0),
+                        PackageName = reader.GetString(1),
+                        AvgExecutionMinutes = reader.GetDecimal(2),
+                        MinExecutionMinutes = reader.GetDecimal(3),
+                        MaxExecutionMinutes = reader.GetDecimal(4),
+                        ExecutionCount = Convert.ToInt32(reader.GetValue(5)),
+                        Trend = reader.GetString(6)
+                    });
+                }
+
+                _cache.Set(cacheKey, results, TimeSpan.FromSeconds(CACHE_DURATION_SECONDS));
+                Console.WriteLine($"💾 Performance Trends cached ({results.Count} data points)");
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching performance trends");
+                throw;
+            }
+        }
+
+        public async Task<List<ExecutionHeatmapData>> GetExecutionHeatmapAsync()
+        {
+            var cacheKey = "execution_heatmap";
+            if (_cache.TryGetValue(cacheKey, out List<ExecutionHeatmapData>? cachedData) && cachedData != null)
+            {
+                Console.WriteLine("✅ Execution Heatmap retrieved from cache");
+                return cachedData;
+            }
+
+            try
+            {
+                var connectionString = GetConnectionString();
+                using var connection = new SqlConnection(connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    SELECT 
+                        DATEPART(HOUR, start_time) as hour_of_day,
+                        DATEPART(WEEKDAY, start_time) as day_of_week,
+                        COUNT(*) as execution_count,
+                        AVG(DATEDIFF(MINUTE, start_time, ISNULL(end_time, GETDATE()))) as avg_duration_minutes,
+                        SUM(CASE WHEN status = 4 THEN 1 ELSE 0 END) as failure_count
+                    FROM [SSISDB].[catalog].[executions] WITH (NOLOCK)
+                    WHERE start_time >= DATEADD(day, -30, GETDATE())
+                    GROUP BY DATEPART(HOUR, start_time), DATEPART(WEEKDAY, start_time)
+                    ORDER BY day_of_week, hour_of_day";
+
+                using var command = new SqlCommand(query, connection);
+                command.CommandTimeout = 30;
+                using var reader = await command.ExecuteReaderAsync();
+
+                var results = new List<ExecutionHeatmapData>();
+                while (await reader.ReadAsync())
+                {
+                    results.Add(new ExecutionHeatmapData
+                    {
+                        HourOfDay = Convert.ToInt32(reader.GetValue(0)),
+                        DayOfWeek = Convert.ToInt32(reader.GetValue(1)),
+                        ExecutionCount = Convert.ToInt32(reader.GetValue(2)),
+                        AvgDurationMinutes = reader.GetDecimal(3),
+                        FailureCount = Convert.ToInt32(reader.GetValue(4))
+                    });
+                }
+
+                _cache.Set(cacheKey, results, TimeSpan.FromSeconds(CACHE_DURATION_SECONDS));
+                Console.WriteLine($"💾 Execution Heatmap cached ({results.Count} data points)");
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching execution heatmap");
+                throw;
+            }
+        }
+
+        public async Task<List<PackageCorrelation>> GetPackageCorrelationAsync()
+        {
+            var cacheKey = "package_correlation";
+            if (_cache.TryGetValue(cacheKey, out List<PackageCorrelation>? cachedData) && cachedData != null)
+            {
+                Console.WriteLine("✅ Package Correlation retrieved from cache");
+                return cachedData;
+            }
+
+            try
+            {
+                var connectionString = GetConnectionString();
+                using var connection = new SqlConnection(connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    WITH PackagePairs AS (
+                        SELECT 
+                            e1.package_name as package1,
+                            e2.package_name as package2,
+                            COUNT(*) as co_execution_count,
+                            AVG(ABS(DATEDIFF(MINUTE, e1.start_time, e2.start_time))) as avg_time_diff_minutes
+                        FROM [SSISDB].[catalog].[executions] e1 WITH (NOLOCK)
+                        JOIN [SSISDB].[catalog].[executions] e2 WITH (NOLOCK)
+                            ON CAST(e1.start_time AS DATE) = CAST(e2.start_time AS DATE)
+                            AND e1.package_name < e2.package_name
+                            AND ABS(DATEDIFF(MINUTE, e1.start_time, e2.start_time)) <= 60
+                        WHERE e1.start_time >= DATEADD(day, -30, GETDATE())
+                        GROUP BY e1.package_name, e2.package_name
+                        HAVING COUNT(*) >= 3
+                    )
+                    SELECT TOP 20
+                        package1,
+                        package2,
+                        co_execution_count,
+                        CAST((co_execution_count * 100.0) / (SELECT COUNT(DISTINCT CAST(start_time AS DATE)) FROM [SSISDB].[catalog].[executions] WITH (NOLOCK) WHERE start_time >= DATEADD(day, -30, GETDATE())) AS DECIMAL(5,2)) as correlation_score,
+                        avg_time_diff_minutes
+                    FROM PackagePairs
+                    ORDER BY co_execution_count DESC";
+
+                using var command = new SqlCommand(query, connection);
+                command.CommandTimeout = 30;
+                using var reader = await command.ExecuteReaderAsync();
+
+                var results = new List<PackageCorrelation>();
+                while (await reader.ReadAsync())
+                {
+                    results.Add(new PackageCorrelation
+                    {
+                        Package1 = reader.GetString(0),
+                        Package2 = reader.GetString(1),
+                        CoExecutionCount = Convert.ToInt32(reader.GetValue(2)),
+                        CorrelationScore = reader.GetDecimal(3),
+                        AvgTimeDifferenceMinutes = reader.GetDecimal(4)
+                    });
+                }
+
+                _cache.Set(cacheKey, results, TimeSpan.FromSeconds(CACHE_DURATION_SECONDS));
+                Console.WriteLine($"💾 Package Correlation cached ({results.Count} correlations)");
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching package correlation");
+                throw;
+            }
+        }
+
+        public async Task<List<ResourceUtilization>> GetResourceUtilizationAsync()
+        {
+            var cacheKey = "resource_utilization";
+            if (_cache.TryGetValue(cacheKey, out List<ResourceUtilization>? cachedData) && cachedData != null)
+            {
+                Console.WriteLine("✅ Resource Utilization retrieved from cache");
+                return cachedData;
+            }
+
+            try
+            {
+                var connectionString = GetConnectionString();
+                using var connection = new SqlConnection(connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
+                    WITH TimeSlots AS (
+                        SELECT 
+                            DATEADD(HOUR, DATEDIFF(HOUR, 0, start_time), 0) as time_slot,
+                            COUNT(*) as concurrent_executions,
+                            SUM(DATEDIFF(SECOND, start_time, ISNULL(end_time, GETDATE()))) as total_cpu_time
+                        FROM [SSISDB].[catalog].[executions] WITH (NOLOCK)
+                        WHERE start_time >= DATEADD(day, -7, GETDATE())
+                        GROUP BY DATEADD(HOUR, DATEDIFF(HOUR, 0, start_time), 0)
+                    )
+                    SELECT 
+                        time_slot,
+                        concurrent_executions,
+                        CAST(total_cpu_time AS DECIMAL(10,2)) as total_cpu_time,
+                        CAST(0.0 AS DECIMAL(10,2)) as peak_memory_mb,
+                        CASE 
+                            WHEN concurrent_executions > 20 THEN 'Critical'
+                            WHEN concurrent_executions > 10 THEN 'High'
+                            WHEN concurrent_executions > 5 THEN 'Medium'
+                            ELSE 'Low'
+                        END as utilization_level
+                    FROM TimeSlots
+                    ORDER BY time_slot DESC";
+
+                using var command = new SqlCommand(query, connection);
+                command.CommandTimeout = 30;
+                using var reader = await command.ExecuteReaderAsync();
+
+                var results = new List<ResourceUtilization>();
+                while (await reader.ReadAsync())
+                {
+                    results.Add(new ResourceUtilization
+                    {
+                        TimeSlot = reader.GetDateTime(0),
+                        ConcurrentExecutions = Convert.ToInt32(reader.GetValue(1)),
+                        TotalCPUTime = reader.GetDecimal(2),
+                        PeakMemoryMB = reader.GetDecimal(3),
+                        UtilizationLevel = reader.GetString(4)
+                    });
+                }
+
+                _cache.Set(cacheKey, results, TimeSpan.FromSeconds(CACHE_DURATION_SECONDS));
+                Console.WriteLine($"💾 Resource Utilization cached ({results.Count} time slots)");
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching resource utilization");
+                throw;
+            }
+        }
     }
 }

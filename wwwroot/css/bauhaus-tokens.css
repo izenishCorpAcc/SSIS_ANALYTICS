@@ -1,0 +1,169 @@
+/* =============================================
+   Bauhaus Design System - Design Tokens
+   Bold geometric style with primary colors
+   ============================================= */
+
+:root {
+    /* Bauhaus Primary Colors - Bold and Pure */
+    --bauhaus-red: #E63946;
+    --bauhaus-yellow: #F1C40F;
+    --bauhaus-blue: #2E86AB;
+    --bauhaus-black: #1D1D1D;
+    --bauhaus-white: #F8F9FA;
+    --bauhaus-gray: #6C757D;
+    
+    /* Accent Colors */
+    --bauhaus-orange: #FF6B35;
+    --bauhaus-green: #06D6A0;
+    --bauhaus-purple: #7209B7;
+    
+    /* Typography - Bold and Geometric */
+    --font-bauhaus-heading: 'Arial Black', 'Helvetica', 'Helvetica Neue', sans-serif;
+    --font-bauhaus-body: 'Helvetica Neue', 'Arial', sans-serif;
+    --font-bauhaus-mono: 'Courier New', monospace;
+    
+    /* Spacing - Grid Based */
+    --bauhaus-unit: 8px;
+    --bauhaus-space-xs: calc(var(--bauhaus-unit) * 1); /* 8px */
+    --bauhaus-space-sm: calc(var(--bauhaus-unit) * 2); /* 16px */
+    --bauhaus-space-md: calc(var(--bauhaus-unit) * 3); /* 24px */
+    --bauhaus-space-lg: calc(var(--bauhaus-unit) * 4); /* 32px */
+    --bauhaus-space-xl: calc(var(--bauhaus-unit) * 6); /* 48px */
+    
+    /* Borders - Thick and Bold */
+    --bauhaus-border-thin: 2px;
+    --bauhaus-border-medium: 4px;
+    --bauhaus-border-thick: 8px;
+    
+    /* Shadows - Flat with Hard Edges */
+    --bauhaus-shadow-sm: 4px 4px 0 var(--bauhaus-black);
+    --bauhaus-shadow-md: 8px 8px 0 var(--bauhaus-black);
+    --bauhaus-shadow-lg: 12px 12px 0 var(--bauhaus-black);
+    
+    /* Geometric Shapes */
+    --bauhaus-radius-none: 0;
+    --bauhaus-radius-sm: 4px;
+    --bauhaus-circle: 50%;
+}
+
+/* Bauhaus Base Layout */
+.bauhaus-container {
+    background: var(--bauhaus-white);
+    color: var(--bauhaus-black);
+    font-family: var(--font-bauhaus-body);
+    line-height: 1.5;
+}
+
+/* Bauhaus Grid System */
+.bauhaus-grid {
+    display: grid;
+    gap: var(--bauhaus-space-md);
+}
+
+.bauhaus-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.bauhaus-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.bauhaus-grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 992px) {
+    .bauhaus-grid-3,
+    .bauhaus-grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .bauhaus-grid-2,
+    .bauhaus-grid-3,
+    .bauhaus-grid-4 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Bauhaus Typography */
+.bauhaus-heading-xl {
+    font-family: var(--font-bauhaus-heading);
+    font-size: 3rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    margin: 0;
+}
+
+.bauhaus-heading-lg {
+    font-family: var(--font-bauhaus-heading);
+    font-size: 2rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    margin: 0;
+}
+
+.bauhaus-heading-md {
+    font-family: var(--font-bauhaus-heading);
+    font-size: 1.5rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    line-height: 1.3;
+    margin: 0;
+}
+
+.bauhaus-text-bold {
+    font-weight: 700;
+}
+
+.bauhaus-text-mono {
+    font-family: var(--font-bauhaus-mono);
+    font-size: 0.9rem;
+}
+
+/* Color Utility Classes */
+.bauhaus-text-red { color: var(--bauhaus-red); }
+.bauhaus-text-yellow { color: var(--bauhaus-yellow); }
+.bauhaus-text-blue { color: var(--bauhaus-blue); }
+.bauhaus-text-black { color: var(--bauhaus-black); }
+.bauhaus-text-white { color: var(--bauhaus-white); }
+
+.bauhaus-bg-red { background-color: var(--bauhaus-red); }
+.bauhaus-bg-yellow { background-color: var(--bauhaus-yellow); }
+.bauhaus-bg-blue { background-color: var(--bauhaus-blue); }
+.bauhaus-bg-black { background-color: var(--bauhaus-black); }
+.bauhaus-bg-white { background-color: var(--bauhaus-white); }
+.bauhaus-bg-green { background-color: var(--bauhaus-green); }
+.bauhaus-bg-orange { background-color: var(--bauhaus-orange); }
+.bauhaus-bg-purple { background-color: var(--bauhaus-purple); }
+
+/* Geometric Shapes */
+.bauhaus-square {
+    aspect-ratio: 1;
+}
+
+.bauhaus-circle {
+    border-radius: var(--bauhaus-circle);
+    aspect-ratio: 1;
+}
+
+.bauhaus-triangle {
+    width: 0;
+    height: 0;
+    border-style: solid;
+}
+
+.bauhaus-triangle-up {
+    border-width: 0 50px 86.6px 50px;
+    border-color: transparent transparent var(--bauhaus-yellow) transparent;
+}
+
+.bauhaus-triangle-down {
+    border-width: 86.6px 50px 0 50px;
+    border-color: var(--bauhaus-blue) transparent transparent transparent;
+}

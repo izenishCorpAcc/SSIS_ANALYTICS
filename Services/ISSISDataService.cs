@@ -15,5 +15,15 @@ namespace SSISAnalyticsDashboard.Services
         Task<List<PackagePerformance>> GetPackagePerformanceStatsAsync(int days = 30, string? businessUnit = null);
         Task<List<FailurePattern>> GetFailurePatternsAsync(int days = 30, string? businessUnit = null);
         Task<List<ExecutionTimeline>> GetExecutionTimelineAsync(int hours = 24, string? businessUnit = null);
+        
+        // Advanced Analytics methods
+        Task<List<PackageReliability>> GetPackageReliabilityScoresAsync();
+        Task<List<MTBFAnalysis>> GetMTBFAnalysisAsync();
+        Task<List<ErrorCluster>> GetErrorClustersAsync();
+        Task<List<SLACompliance>> GetSLAComplianceAsync();
+        Task<List<PerformanceTrend>> GetPerformanceTrendsAsync();
+        Task<List<ExecutionHeatmapData>> GetExecutionHeatmapAsync();
+        Task<List<PackageCorrelation>> GetPackageCorrelationAsync();
+        Task<List<ResourceUtilization>> GetResourceUtilizationAsync();
     }
 }
